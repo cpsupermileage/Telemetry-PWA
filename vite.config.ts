@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react-swc';
+import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import { VitePWA, type ManifestOptions } from 'vite-plugin-pwa';
@@ -39,7 +39,11 @@ const manifest: Partial<ManifestOptions> = {
 // https://vite.dev/config/
 export default defineConfig({
 	plugins: [
-		react(),
+		react({
+			babel: {
+				plugins: ['babel-plugin-react-compiler'],
+			},
+		}),
 		tailwindcss(),
 		VitePWA({
 			registerType: 'autoUpdate',
