@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import reactX from 'eslint-plugin-react-x';
 import reactDom from 'eslint-plugin-react-dom';
+import reactCompiler from 'eslint-plugin-react-compiler';
 import tseslint from 'typescript-eslint';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
@@ -21,6 +22,7 @@ export default defineConfig([
 			reactDom.configs.recommended,
 			reactRefresh.configs.vite,
 			eslintConfigPrettier,
+			reactCompiler.configs.recommended,
 		],
 		languageOptions: {
 			parserOptions: {
