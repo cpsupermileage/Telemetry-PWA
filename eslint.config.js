@@ -17,12 +17,12 @@ export default defineConfig([
 			js.configs.recommended,
 			tseslint.configs.recommendedTypeChecked,
 			tseslint.configs.stylisticTypeChecked,
-			reactHooks.configs['recommended-latest'],
+			reactHooks.configs.flat['recommended-latest'],
 			reactX.configs['recommended-typescript'],
 			reactDom.configs.recommended,
+			reactCompiler.configs.recommended,
 			reactRefresh.configs.vite,
 			eslintConfigPrettier,
-			reactCompiler.configs.recommended,
 		],
 		languageOptions: {
 			parserOptions: {
