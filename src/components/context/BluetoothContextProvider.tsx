@@ -2,17 +2,26 @@ import cachedAsyncFunction from '@/lib/utils/cachedAsyncFunction';
 import { createContext, useEffect, useRef, type ReactElement } from 'react';
 import EventEmitter from 'eventemitter3';
 import 'web-bluetooth'; // Types for WebBluetooth because its still experimental
+import type { CarState } from '../types/CarState';
 
 // Bluetooth Config
-const serviceUuid = '8e1dfb38-f3a5-4b3f-8f99-a30c0f61fc4e';
-const characteristicUuids = {
+const SERVICE_UUID = '8e1dfb38-f3a5-4b3f-8f99-a30c0f61fc4e';
+const CHARACTERISTIC_UUIDS: Record<CharacteristicKeys, string> = {
 	// Some characteristic types have assigned numbers in the BLE spec, see here:
 	// https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/Assigned_Numbers/out/en/Assigned_Numbers.pdf
-	rpm: '0x2C09',
-	// TODO: Add the rest
+	tempMosfet: '0x2A1E', // Intermediate Temperature (the name in the BLE spec)
+	tempMotor: '0x2A1C', // Temperature Measurement
+	motorCurrent: '0x2AEE', // Electric Current
+	inputCurrent: '0x2AE0', // Average Current
+	dutyCycle: '0x2C10', // Work Cycle Data
+	rpm: '0x2C09', // Rotational Speed
+	volts: '0x2B18', // Voltage
+	wattHours: '0x2AF2', // Energy
+	error: '0x2BBB', // Status flags
 };
 
 export type BluetoothStatus = 'disconnected' | 'connecting' | 'connected';
+export type CharacteristicKeys = keyof CarState;
 
 interface BluetoothEventMap {
 	// Whenever the status of the bluetooth connection is changed
@@ -63,9 +72,7 @@ export default function BluetoothContextProvider({ children }: { children: React
 	const savedDevice = useRef<BluetoothDevice | undefined>(undefined);
 	const server = useRef<BluetoothRemoteGATTServer | undefined>(undefined);
 
-	const characteristics = useRef<
-		Record<keyof typeof characteristicUuids, BluetoothRemoteGATTCharacteristic> | undefined
-	>(undefined);
+	const characteristics = useRef<Record<CharacteristicKeys, BluetoothRemoteGATTCharacteristic> | undefined>(undefined);
 
 	// Returns the status of the connection
 	function getStatus() {
@@ -80,7 +87,7 @@ export default function BluetoothContextProvider({ children }: { children: React
 
 			savedDevice.current = await navigator.bluetooth.requestDevice({
 				filters: [{ namePrefix: 'CLAW' }],
-				optionalServices: [serviceUuid],
+				optionalServices: [SERVICE_UUID],
 				// acceptAllDevices: true,
 			});
 
@@ -133,17 +140,17 @@ export default function BluetoothContextProvider({ children }: { children: React
 	async function getCharacteristics() {
 		if (!server.current) throw new Error('Not connected');
 
-		const service = await server.current.getPrimaryService(serviceUuid);
+		const service = await server.current.getPrimaryService(SERVICE_UUID);
 		if (!service) throw new Error('Failed to get service');
 
 		// Crazy one-liner, but this retrieves all the defined characteristics from the server all at the same time
 		characteristics.current = Object.fromEntries(
 			await Promise.all(
-				Object.entries(characteristicUuids).map(([name, uuid]) =>
+				Object.entries(CHARACTERISTIC_UUIDS).map(([name, uuid]) =>
 					(async () => [name, await service.getCharacteristic(uuid)])()
 				)
 			)
-		) as Record<keyof typeof characteristicUuids, BluetoothRemoteGATTCharacteristic>;
+		) as Record<CharacteristicKeys, BluetoothRemoteGATTCharacteristic>;
 
 		// Subscribe to all characteristic updates
 		await Promise.all(Object.values(characteristics.current).map((c) => c.startNotifications()));
