@@ -73,25 +73,28 @@ export default function BluetoothContextProvider({ children }: { children: React
 	}
 
 	// Prompts the user to select a bluetooth device and starts the connection process
-	const connect = cachedAsyncFunction(async () => {
-		disconnect();
+	async function connect() {
+		// Cache the actual logic, preventing it from being called multiple times
+		await cachedAsyncFunction(async () => {
+			disconnect();
 
-		savedDevice.current = await navigator.bluetooth.requestDevice({
-			filters: [{ namePrefix: 'CLAW' }],
-			optionalServices: [serviceUuid],
-			// acceptAllDevices: true,
-		});
+			savedDevice.current = await navigator.bluetooth.requestDevice({
+				filters: [{ namePrefix: 'CLAW' }],
+				optionalServices: [serviceUuid],
+				// acceptAllDevices: true,
+			});
 
-		await connectToDevice();
+			await connectToDevice();
 
-		savedDevice.current.addEventListener('gattserverdisconnected', () => {
-			console.log('GATT server disconnected');
-			// Don't set device to null here, as we want to keep the device object around for reconnecting
-			server.current = undefined;
-			characteristics.current = undefined;
-			events.current.emit('status', 'disconnected');
-		});
-	});
+			savedDevice.current.addEventListener('gattserverdisconnected', () => {
+				console.log('GATT server disconnected');
+				// Don't set device to null here, as we want to keep the device object around for reconnecting
+				server.current = undefined;
+				characteristics.current = undefined;
+				events.current.emit('status', 'disconnected');
+			});
+		})();
+	}
 
 	// Attempts to connect to the GATT server of the saved device and get the primary service and characteristics
 	async function connectToDevice() {
