@@ -2,7 +2,7 @@ import cachedAsyncFunction from '@/lib/utils/cachedAsyncFunction';
 import { createContext, useEffect, useRef, type ReactElement } from 'react';
 import EventEmitter from 'eventemitter3';
 import 'web-bluetooth'; // Types for WebBluetooth because its still experimental
-import type { CarState } from '../types/CarState';
+import type { CarState } from '../../lib/types/CarState';
 
 // Bluetooth Config
 const SERVICE_UUID = '8e1dfb38-f3a5-4b3f-8f99-a30c0f61fc4e';
