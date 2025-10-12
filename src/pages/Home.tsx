@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import type { BeforeInstallPromptEvent } from '@/lib/types/BeforeInstallPromptEvent';
 import { ChartSpline, Car, Download, Share, MonitorDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 
 function App() {
 	// The install prompt event, which is fired when the browser is ready to prompt the user to install the app
@@ -58,11 +59,15 @@ function App() {
 				<div className="bg-border h-px w-full shrink-0 sm:h-full sm:w-px" />
 
 				<div className="flex flex-col items-center gap-4">
-					<Button variant="default">
-						<Car /> Driver Dashboard
+					<Button variant="default" asChild>
+						<Link to="/driver/dashboard">
+							<Car /> Driver Dashboard
+						</Link>
 					</Button>
-					<Button variant="secondary">
-						<ChartSpline /> Spectator Dashboard
+					<Button variant="secondary" asChild>
+						<Link to="/spectator/dashboard">
+							<ChartSpline /> Spectator Dashboard
+						</Link>
 					</Button>
 					{!installed && (
 						<>
