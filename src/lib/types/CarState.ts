@@ -25,7 +25,11 @@ export interface CarState {
 	 */
 	dutyCycle: number;
 	/**
-	 * The revolutions per minute of the car's motor output.
+	 * The revolutions per minute of the car's **motor**.
+	 */
+	tacho: number;
+	/**
+	 * The revolutions per minute of the car's **wheels**.
 	 */
 	rpm: number;
 	/**

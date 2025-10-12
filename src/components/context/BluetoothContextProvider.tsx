@@ -14,7 +14,8 @@ const CHARACTERISTIC_UUIDS: Record<CharacteristicKeys, string> = {
 	motorCurrent: '0x2AEE', // Electric Current
 	inputCurrent: '0x2AE0', // Average Current
 	dutyCycle: '0x2C10', // Work Cycle Data
-	rpm: '0x2C09', // Rotational Speed
+	tacho: '0x2C09', // Rotational Speed
+	rpm: '0x2A67', // Location and Speed
 	volts: '0x2B18', // Voltage
 	wattHours: '0x2AF2', // Energy
 	error: '0x2BBB', // Status flags
