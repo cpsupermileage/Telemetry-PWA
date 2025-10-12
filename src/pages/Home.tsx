@@ -1,20 +1,23 @@
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { ChartSpline, Car } from 'lucide-react';
 
 function App() {
 	return (
-		<main className="relative mx-auto flex min-h-screen w-full max-w-sm flex-col items-center p-4">
-			<img alt="Logo with the text SMV above a car" src="/pwa-512x512.png" className="max-w-48" />
+		<main className="relative mx-auto flex min-h-screen w-full flex-col items-center p-4">
+			<div className="flex w-full max-w-sm flex-col items-center justify-center gap-8 sm:max-w-full sm:flex-row">
+				<img alt="Logo with the text SMV above a car" src="/pwa-512x512.png" className="max-w-48" />
 
-			<Separator className="mb-8" />
+				<div className="bg-border h-px w-full shrink-0 sm:h-full sm:w-px" />
 
-			<Button variant="default" className="mb-4">
-				<Car /> Driver Dashboard
-			</Button>
-			<Button variant="secondary" className="mb-4">
-				<ChartSpline /> Spectator Dashboard
-			</Button>
+				<div className="flex flex-col items-center gap-4">
+					<Button variant="default">
+						<Car /> Driver Dashboard
+					</Button>
+					<Button variant="secondary">
+						<ChartSpline /> Spectator Dashboard
+					</Button>
+				</div>
+			</div>
 
 			<footer className="text-muted-foreground mt-auto text-center">
 				<p className="mb-2 text-sm">Web App developed by the CalPoly Supermileage Team for the Shell Eco Marathon</p>
