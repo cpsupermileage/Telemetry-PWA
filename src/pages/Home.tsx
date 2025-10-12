@@ -112,7 +112,10 @@ function App() {
 			</div>
 
 			<footer className="text-muted-foreground mt-auto text-center">
-				<p className="mb-2 text-sm">Web App developed by the CalPoly Supermileage Team for the Shell Eco Marathon</p>
+				<p className="mb-2 text-sm">Web App developed by the CalPoly Supermileage Team for the Shell Eco Marathon.</p>
+				<p className="mb-2 text-sm">
+					Version: <code>{APP_VERSION}</code> - Build Date: <i>{new Date(BUILD_DATE).toLocaleString()}</i>
+				</p>
 				<div className="flex items-center justify-center">
 					<a
 						rel="noreferrer noopener"
