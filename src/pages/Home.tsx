@@ -1,7 +1,55 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import { Button, buttonVariants } from '@/components/ui/button';
-import { ChartSpline, Car } from 'lucide-react';
+import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import type { BeforeInstallPromptEvent } from '@/lib/types/BeforeInstallPromptEvent';
+import { ChartSpline, Car, Download, Share, MonitorDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 function App() {
+	// The install prompt event, which is fired when the browser is ready to prompt the user to install the app
+	// we store this in state so that we can call prompt() on it later
+	const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+	const [installDialogOpen, setInstallDialogOpen] = useState(false);
+
+	const [installed, setInstalled] = useState(window.matchMedia('(display-mode: standalone)').matches);
+
+	useEffect(() => {
+		// This event fires when the browser is ready to prompt the user to install the app
+		const handler = (e: BeforeInstallPromptEvent) => {
+			e.preventDefault();
+			setInstallPrompt(e);
+		};
+		window.addEventListener('beforeinstallprompt', handler);
+		return () => window.removeEventListener('beforeinstallprompt', handler);
+	}, []);
+
+	useEffect(() => {
+		// This event fires once the app is installed
+		const handler = () => {
+			setInstallDialogOpen(false);
+			setInstalled(true);
+		};
+		window.addEventListener('appinstalled', handler);
+		return () => window.removeEventListener('appinstalled', handler);
+	}, []);
+
+	async function tryInstall() {
+		if (installPrompt) {
+			const result = await installPrompt.prompt();
+			if (result.outcome === 'accepted') return;
+		}
+		setInstallDialogOpen(true);
+	}
+
 	return (
 		<main className="relative mx-auto flex min-h-screen w-full flex-col items-center p-4">
 			<div className="flex w-full max-w-sm flex-col items-center justify-center gap-8 sm:max-w-full sm:flex-row">
@@ -16,6 +64,50 @@ function App() {
 					<Button variant="secondary">
 						<ChartSpline /> Spectator Dashboard
 					</Button>
+					{!installed && (
+						<>
+							<Separator />
+							<Button variant="outline" onClick={tryInstall}>
+								<Download /> Install as App
+							</Button>
+						</>
+					)}
+					<Dialog open={installDialogOpen} onOpenChange={setInstallDialogOpen}>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>How to install as a standalone app</DialogTitle>
+								<DialogDescription>
+									Make sure you are using a supported browser such as Chrome, Edge, or Safari.
+								</DialogDescription>
+							</DialogHeader>
+							<div className="my-4">
+								<h4 className="mb-2">If you are using a phone or tablet:</h4>
+								<ul className="ml-8 list-disc">
+									<li>
+										Click the Share Icon &#40;
+										<Share size={16} className="inline" />
+										&#41; in your browser and tap &quot;Add to Home Screen&quot;
+									</li>
+								</ul>
+								<br />
+								<h4 className="mb-2">If you are using a computer:</h4>
+								<ul className="ml-8 list-disc">
+									<li>
+										In your address bar, look for an install button &#40;
+										<MonitorDown size={16} className="inline" />
+										&#41;
+									</li>
+								</ul>
+							</div>
+							<DialogFooter>
+								<DialogClose asChild>
+									<Button type="button" variant="secondary">
+										Close
+									</Button>
+								</DialogClose>
+							</DialogFooter>
+						</DialogContent>
+					</Dialog>
 				</div>
 			</div>
 

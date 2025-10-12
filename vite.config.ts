@@ -7,6 +7,8 @@ import { VitePWA, type ManifestOptions } from 'vite-plugin-pwa';
 const manifest: Partial<ManifestOptions> = {
 	name: 'SMV Telemetry',
 	short_name: 'SMVT',
+	start_url: '/',
+	display: 'standalone',
 	description: "Driver dashboard & Telemetry System for CalPoly's SMV Team",
 	theme_color: '#050706',
 	background_color: '#050706',
@@ -48,6 +50,9 @@ export default defineConfig({
 		VitePWA({
 			registerType: 'autoUpdate',
 			manifest,
+			workbox: {
+				globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+			},
 		}),
 	],
 	resolve: {
