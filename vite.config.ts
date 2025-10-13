@@ -64,4 +64,5 @@ export default defineConfig({
 		APP_VERSION: JSON.stringify(process.env.npm_package_version),
 		BUILD_DATE: Date.now(),
 	},
+	envPrefix: 'PUBLIC_',
 });

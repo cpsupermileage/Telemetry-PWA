@@ -61,6 +61,7 @@
 		"*.{js,ts,jsx,tsx,css,md,json}": "prettier --write"
 	},
 	"dependencies": {
-		"@radix-ui/react-dialog": "^1.1.15"
+		"@radix-ui/react-dialog": "^1.1.15",
+		"@vis.gl/react-google-maps": "^1.5.5"
 	}
 }
