@@ -1,13 +1,12 @@
 #driver-view {
 	grid-template:
-		'a e e c' 1fr
-		'b e e d' 1fr / 1fr 1fr 1fr 1fr;
+		'a e c' 1fr
+		'b e d' 1fr / 1fr 1.5fr 1fr;
 
 	@container (width < 48rem) {
 		grid-template:
 			'a b' 1fr
-			'e e' 1fr
-			'e e' 1fr
+			'e e' 1.5fr
 			'c d' 1fr / 1fr 1fr;
 	}
 }
