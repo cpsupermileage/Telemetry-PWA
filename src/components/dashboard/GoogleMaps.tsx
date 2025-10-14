@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Alert, AlertTitle } from '../ui/alert';
 import { AlertCircleIcon, MapPinned } from 'lucide-react';
 import { Button } from '../ui/button';
+import { widgetVariants } from './Widget';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.PUBLIC_GOOGLE_MAPS_API_KEY as string | undefined;
 
@@ -93,7 +94,7 @@ function GoogleMaps() {
 			/>
 		</APIProvider>
 	) : (
-		<div className="flex h-full w-full items-center justify-center bg-black/30 p-8">
+		<div className={widgetVariants({ className: 'h-full w-full p-8' })}>
 			{!GOOGLE_MAPS_API_KEY ? (
 				<Alert variant="destructive">
 					<AlertCircleIcon />
