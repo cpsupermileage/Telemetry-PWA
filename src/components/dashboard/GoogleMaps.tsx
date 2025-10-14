@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { Alert, AlertTitle } from '../ui/alert';
 import { AlertCircleIcon, MapPinned } from 'lucide-react';
 import { Button } from '../ui/button';
-import { widgetVariants } from './Widget';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.PUBLIC_GOOGLE_MAPS_API_KEY as string | undefined;
 
@@ -93,29 +92,25 @@ function GoogleMaps() {
 				mapTypeId="satellite"
 			/>
 		</APIProvider>
+	) : !GOOGLE_MAPS_API_KEY ? (
+		<Alert variant="destructive" className="m-8">
+			<AlertCircleIcon />
+			<AlertTitle>
+				Please define <code>GOOGLE_MAPS_API_KEY</code>
+			</AlertTitle>
+		</Alert>
+	) : permissionState === 'prompt' ? (
+		<Button onClick={promptForLocation} className="m-8">
+			<MapPinned />
+			Enable Map
+		</Button>
 	) : (
-		<div className={widgetVariants({ className: 'h-full w-full p-8' })}>
-			{!GOOGLE_MAPS_API_KEY ? (
-				<Alert variant="destructive">
-					<AlertCircleIcon />
-					<AlertTitle>
-						Please define <code>GOOGLE_MAPS_API_KEY</code>
-					</AlertTitle>
-				</Alert>
-			) : permissionState === 'prompt' ? (
-				<Button onClick={promptForLocation}>
-					<MapPinned />
-					Enable Map
-				</Button>
-			) : (
-				<Alert variant="destructive">
-					<AlertCircleIcon />
-					<AlertTitle>
-						Please enable the <code>location</code> permission
-					</AlertTitle>
-				</Alert>
-			)}
-		</div>
+		<Alert variant="destructive" className="m-8">
+			<AlertCircleIcon />
+			<AlertTitle>
+				Please enable the <code>location</code> permission
+			</AlertTitle>
+		</Alert>
 	);
 }
 

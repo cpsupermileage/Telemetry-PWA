@@ -1,39 +1,22 @@
 import { cn } from '@/lib/utils';
-import { cva, type VariantProps } from 'class-variance-authority';
 import type { HTMLAttributes } from 'react';
 
-const widgetVariants = cva(
-	'bg-card text-card-foreground flex flex-col items-center justify-center rounded-lg border shadow-sm overflow-hidden',
-	{
-		variants: {
-			size: {
-				default: 'text-lg [&>small]:text-sm',
-				lg: 'text-2xl [&>small]:text-base',
-				xl: 'text-4xl [&>small]:text-base',
-				'2xl': 'text-6xl [&>small]:text-lg',
-			},
-		},
-		defaultVariants: {
-			size: 'default',
-		},
-	}
-);
-
 function Widget({
-	value,
-	unit,
-	delta = 2,
-	size,
+	children,
 	className,
 	...props
-}: { value?: number; unit?: string; delta?: number } & HTMLAttributes<HTMLDivElement> &
-	VariantProps<typeof widgetVariants>) {
+}: { value?: number; unit?: string; delta?: number } & HTMLAttributes<HTMLDivElement>) {
 	return (
-		<div {...props} className={cn(widgetVariants({ size, className }))}>
-			<h3 className="font-bold">{value?.toFixed(delta) ?? '--'}</h3>
-			<small className="text-muted-foreground font-normal">{unit}</small>
+		<div
+			{...props}
+			className={cn(
+				'flex flex-col items-center justify-center overflow-hidden rounded-lg bg-black/50 shadow-sm',
+				className
+			)}
+		>
+			{children}
 		</div>
 	);
 }
 
-export { Widget, widgetVariants };
+export default Widget;
