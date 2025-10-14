@@ -93,7 +93,7 @@ function GoogleMaps() {
 			/>
 		</APIProvider>
 	) : (
-		<div className="flex h-full w-full items-center justify-center bg-black/10 p-8">
+		<div className="flex h-full w-full items-center justify-center bg-black/30 p-8">
 			{!GOOGLE_MAPS_API_KEY ? (
 				<Alert variant="destructive">
 					<AlertCircleIcon />

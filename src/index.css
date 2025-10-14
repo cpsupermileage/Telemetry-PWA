@@ -116,5 +116,9 @@
 	}
 	body {
 		@apply bg-background text-foreground;
+
+		&:is(.dark *) {
+			background: var(--background) url('/assets/carbon.png') repeat center/200px !important;
+		}
 	}
 }
