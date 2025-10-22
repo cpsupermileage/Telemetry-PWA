@@ -38,6 +38,7 @@ export interface CommonTelemetryContextType {
 	events: EventEmitter<CommonTelemetryEventMap>;
 	trip?: TripRow;
 	setTrip: Dispatch<SetStateAction<TripRow | undefined>>;
+	setGeolocation?: (pos: GeolocationPosition) => void;
 }
 
 /**
@@ -53,6 +54,7 @@ export const CommonTelemetryContext = createContext<CommonTelemetryContextType>(
 	setTrip: () => {
 		throw new Error('setTrip not implemented');
 	},
+	setGeolocation: undefined,
 });
 
 // The actual providers are defined within other components that actually define functionality

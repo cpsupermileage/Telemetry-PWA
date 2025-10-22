@@ -39,6 +39,8 @@ export interface DriverTelemetrySchema extends CommonTelemetrySchema {
  * A wrapper for providing the DriverTelemetryContext values to its children.
  */
 export default function DriverTelemetryContextProvider({ children }: { children: ReactElement }) {
+	const ble = use(BluetoothContext);
+
 	const [events] = useState<EventEmitter<CommonTelemetryEventMap>>(() => new EventEmitter());
 	const [trip, setTrip] = useState<TripRow | undefined>(undefined);
 
@@ -63,28 +65,34 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 		},
 	});
 
-	// Handling incoming bluetooth data
-	const ble = use(BluetoothContext);
-
 	const cache = useRef<Partial<Record<CharacteristicKeys, number>>>({});
+	const geoCache = useRef<GeolocationPosition | undefined>(undefined);
 
+	// Function for taking the cached data and putting it in the db
 	const pushToDB = useCallback(() => {
 		if (!db) return console.error('Attempted to push data to db, but db is undefined');
 		if (!trip) return console.error('Attempted to push data to db, but trip is undefined');
+		if (!cache.current && !geoCache.current) return; // If there is no new data, ignore
 		void db
 			.put('telemetry', {
-				id: Math.random(), // TODO
+				id: Math.random(), // TODO: Better id generation
 				tripId: trip.id,
 				time: new Date(),
 				...cache,
-				// TODO: lat & long
+				lat: geoCache.current?.coords.latitude,
+				long: geoCache.current?.coords.longitude,
 				hasPushed: 0,
 			})
 			.then(() => {
+				// Notify of db update so components can update
 				events.emit('update');
 			});
+		// Clear caches immediately after we push to db
+		cache.current = {};
+		geoCache.current = undefined;
 	}, [db, events, trip]);
 
+	// Handle incoming ble data and put the characteristic updates in the cache
 	useEffect(() => {
 		if (!ble) return;
 
@@ -102,12 +110,18 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 		};
 	}, [ble, pushToDB]);
 
+	// Exists so the google maps embed can update the values that are logged, puts them in a cache
+	const setGeolocation = useCallback((pos: GeolocationPosition) => {
+		geoCache.current = pos;
+	}, []);
+
 	// Returning the value
 	const value = {
 		db: db as unknown as IDBPDatabase<CommonTelemetrySchema> | undefined,
 		events,
 		trip,
 		setTrip,
+		setGeolocation,
 	};
 
 	return <CommonTelemetryContext value={value}>{children}</CommonTelemetryContext>;
