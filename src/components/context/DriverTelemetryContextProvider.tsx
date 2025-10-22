@@ -1,7 +1,7 @@
 import type { LocalTelemetryRow } from '@/lib/types/TelemetryRow';
 import type { LocalTripRow, TripRow } from '@/lib/types/TripRow';
 import { type IDBPDatabase } from 'idb';
-import { use, useEffect, useState, type ReactElement } from 'react';
+import { use, useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import {
 	CommonTelemetryContext,
 	type CommonTelemetryEventMap,
@@ -10,6 +10,7 @@ import {
 import EventEmitter from 'eventemitter3';
 import { BluetoothContext, type CharacteristicKeys } from './BluetoothContextProvider';
 import useIndexedDB from '@/lib/utils/useIndexedDB';
+import debouncedFunction from '@/lib/utils/debouncedFunction';
 
 export interface DriverTelemetrySchema extends CommonTelemetrySchema {
 	trips: {
@@ -65,44 +66,41 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 	// Handling incoming bluetooth data
 	const ble = use(BluetoothContext);
 
+	const cache = useRef<Partial<Record<CharacteristicKeys, number>>>({});
+
+	const pushToDB = useCallback(() => {
+		if (!db) return console.error('Attempted to push data to db, but db is undefined');
+		if (!trip) return console.error('Attempted to push data to db, but trip is undefined');
+		void db
+			.put('telemetry', {
+				id: Math.random(), // TODO
+				tripId: trip.id,
+				time: new Date(),
+				...cache,
+				// TODO: lat & long
+				hasPushed: 0,
+			})
+			.then(() => {
+				events.emit('update');
+			});
+	}, [db, events, trip]);
+
 	useEffect(() => {
-		if (!db || !ble || !trip) return;
+		if (!ble) return;
 
-		const cache: Partial<Record<CharacteristicKeys, number>> = {};
+		// Makes it so pushToDB() will only be called max every 250ms
+		const tryPushToDB = debouncedFunction(pushToDB, 250);
 
-		let timeout: number | undefined = undefined;
-		let lastPush = 0; // epoch
 		function onCharUpdate(name: CharacteristicKeys, value: number) {
-			cache[name] = value;
-
-			clearTimeout(timeout);
-			if (Date.now() - lastPush > 250) pushToDB();
-			else timeout = setTimeout(pushToDB, 250);
-		}
-
-		function pushToDB() {
-			lastPush = Date.now();
-			if (!db) return console.error('Attempted to push data to db, but db is undefined');
-			if (!trip) return console.error('Attempted to push data to db, but trip is undefined');
-			void db
-				.put('telemetry', {
-					id: Math.random(), // TODO
-					tripId: trip.id,
-					time: new Date(),
-					...cache,
-					// TODO: lat & long
-					hasPushed: 0,
-				})
-				.then(() => {
-					events.emit('update');
-				});
+			cache.current[name] = value;
+			tryPushToDB();
 		}
 
 		ble.events.on('characteristicUpdate', onCharUpdate);
 		return () => {
 			ble.events.off('characteristicUpdate', onCharUpdate);
 		};
-	}, [ble, db, events, trip]);
+	}, [ble, pushToDB]);
 
 	// Returning the value
 	const value = {
