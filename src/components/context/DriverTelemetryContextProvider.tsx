@@ -1,5 +1,5 @@
 import type { LocalTelemetryRow } from '@/lib/types/TelemetryRow';
-import type { LocalTripRow } from '@/lib/types/TripRow';
+import type { LocalTripRow, TripRow } from '@/lib/types/TripRow';
 import { type IDBPDatabase } from 'idb';
 import { use, useEffect, useState, type ReactElement } from 'react';
 import {
@@ -39,6 +39,7 @@ export interface DriverTelemetrySchema extends CommonTelemetrySchema {
  */
 export default function DriverTelemetryContextProvider({ children }: { children: ReactElement }) {
 	const [events] = useState<EventEmitter<CommonTelemetryEventMap>>(() => new EventEmitter());
+	const [trip, setTrip] = useState<TripRow | undefined>(undefined);
 
 	// Handle the db
 	const db = useIndexedDB<DriverTelemetrySchema>('driver-telemetry-cache', 1, {
@@ -65,7 +66,7 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 	const ble = use(BluetoothContext);
 
 	useEffect(() => {
-		if (!db || !ble) return;
+		if (!db || !ble || !trip) return;
 
 		const cache: Partial<Record<CharacteristicKeys, number>> = {};
 
@@ -82,10 +83,11 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 		function pushToDB() {
 			lastPush = Date.now();
 			if (!db) return console.error('Attempted to push data to db, but db is undefined');
+			if (!trip) return console.error('Attempted to push data to db, but trip is undefined');
 			void db
 				.put('telemetry', {
 					id: Math.random(), // TODO
-					tripId: Math.random(), // TODO
+					tripId: trip.id,
 					time: new Date(),
 					...cache,
 					// TODO: lat & long
@@ -100,12 +102,14 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 		return () => {
 			ble.events.off('characteristicUpdate', onCharUpdate);
 		};
-	}, [ble, db, events]);
+	}, [ble, db, events, trip]);
 
 	// Returning the value
 	const value = {
 		db: db as unknown as IDBPDatabase<CommonTelemetrySchema> | undefined,
 		events,
+		trip,
+		setTrip,
 	};
 
 	return <CommonTelemetryContext value={value}>{children}</CommonTelemetryContext>;

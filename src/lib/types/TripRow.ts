@@ -5,7 +5,7 @@ export interface TripRow {
 	name: string;
 	type: TripType;
 	createdAt: Date;
-	startedAt: Date;
+	startedAt?: Date;
 }
 
 export interface LocalTripRow extends TripRow {
