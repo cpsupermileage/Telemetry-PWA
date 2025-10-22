@@ -21,6 +21,19 @@ const CHARACTERISTIC_UUIDS: Record<CharacteristicKeys, string> = {
 	error: '0x2BBB', // Status flags
 };
 
+const CHARACTERISTIC_DECODE_FUNCTIONS: Record<CharacteristicKeys, (data: DataView) => number> = {
+	tempMosfet: (data) => data.getFloat32(0),
+	tempMotor: (data) => data.getFloat32(0),
+	motorCurrent: (data) => data.getFloat32(0),
+	inputCurrent: (data) => data.getFloat32(0),
+	dutyCycle: (data) => data.getFloat32(0),
+	tacho: (data) => data.getFloat32(0),
+	rpm: (data) => data.getFloat32(0),
+	volts: (data) => data.getFloat32(0),
+	wattHours: (data) => data.getFloat32(0),
+	error: (data) => data.getUint8(0),
+};
+
 export type BluetoothStatus = 'disconnected' | 'connecting' | 'connected';
 export type CharacteristicKeys = keyof CarState;
 
@@ -28,7 +41,7 @@ interface BluetoothEventMap {
 	// Whenever the status of the bluetooth connection is changed
 	status: (status: BluetoothStatus) => void;
 	// WARNING: emits for all updates, for each single characteristic
-	characteristicUpdate: () => void;
+	characteristicUpdate: (characteristic: CharacteristicKeys, value: number) => void;
 }
 
 /**
@@ -156,9 +169,15 @@ export default function BluetoothContextProvider({ children }: { children: React
 		// Subscribe to all characteristic updates
 		await Promise.all(Object.values(characteristics.current).map((c) => c.startNotifications()));
 		// Attach event listeners that proxy to the 'characteristicUpdate' event
-		Object.values(characteristics.current).forEach((c) =>
+		Object.entries(characteristics.current).forEach(([name, c]) =>
 			c.addEventListener('characteristicvaluechanged', () => {
-				if (c.value) events.current.emit('characteristicUpdate');
+				if (c.value) {
+					events.current.emit(
+						'characteristicUpdate',
+						name as CharacteristicKeys,
+						CHARACTERISTIC_DECODE_FUNCTIONS[name as CharacteristicKeys](c.value)
+					);
+				}
 			})
 		);
 	}

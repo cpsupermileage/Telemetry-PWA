@@ -20,6 +20,6 @@ export interface TelemetryRow {
 	long?: number;
 }
 
-export interface LocalTelemetryRow {
-	hasPushed: boolean;
+export interface LocalTelemetryRow extends TelemetryRow {
+	hasPushed: number; // 0 or 1
 }

@@ -8,5 +8,5 @@ export interface TripRow {
 }
 
 export interface LocalTripRow extends TripRow {
-	hasPushed: boolean;
+	hasPushed: number; // 0 or 1
 }
