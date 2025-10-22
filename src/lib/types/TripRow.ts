@@ -4,6 +4,7 @@ export interface TripRow {
 	id: number;
 	name: string;
 	type: TripType;
+	createdAt: Date;
 	startedAt: Date;
 }
 

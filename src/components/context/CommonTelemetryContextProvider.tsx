@@ -10,6 +10,7 @@ export interface CommonTelemetrySchema extends DBSchema {
 		value: TripRow;
 		indexes: {
 			'by-id': number;
+			'by-createdAt': Date;
 			'by-startedAt': Date;
 		};
 	};

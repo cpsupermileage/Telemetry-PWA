@@ -1,6 +1,6 @@
 import type { LocalTelemetryRow } from '@/lib/types/TelemetryRow';
 import type { LocalTripRow } from '@/lib/types/TripRow';
-import { openDB, type IDBPDatabase } from 'idb';
+import { type IDBPDatabase } from 'idb';
 import { use, useEffect, useState, type ReactElement } from 'react';
 import {
 	CommonTelemetryContext,
@@ -9,6 +9,7 @@ import {
 } from './CommonTelemetryContextProvider';
 import EventEmitter from 'eventemitter3';
 import { BluetoothContext, type CharacteristicKeys } from './BluetoothContextProvider';
+import useIndexedDB from '@/lib/utils/useIndexedDB';
 
 export interface DriverTelemetrySchema extends CommonTelemetrySchema {
 	trips: {
@@ -16,6 +17,7 @@ export interface DriverTelemetrySchema extends CommonTelemetrySchema {
 		value: LocalTripRow;
 		indexes: {
 			'by-id': number;
+			'by-createdAt': Date;
 			'by-startedAt': Date;
 			'by-hasPushed': number;
 		};
@@ -36,41 +38,28 @@ export interface DriverTelemetrySchema extends CommonTelemetrySchema {
  * A wrapper for providing the DriverTelemetryContext values to its children.
  */
 export default function DriverTelemetryContextProvider({ children }: { children: ReactElement }) {
-	const [db, setDb] = useState<IDBPDatabase<DriverTelemetrySchema> | undefined>(undefined);
 	const [events] = useState<EventEmitter<CommonTelemetryEventMap>>(() => new EventEmitter());
 
 	// Handle the db
-	useEffect(() => {
-		// Have to use a cache here to make sure it can still be closed
-		let dbCache: IDBPDatabase<DriverTelemetrySchema> | undefined = undefined;
+	const db = useIndexedDB<DriverTelemetrySchema>('driver-telemetry-cache', 1, {
+		upgrade(db) {
+			const trips = db.createObjectStore('trips', {
+				keyPath: 'id',
+			});
+			trips.createIndex('by-id', 'id', { unique: true });
+			trips.createIndex('by-createdAt', 'createdAt', { unique: false });
+			trips.createIndex('by-startedAt', 'startedAt', { unique: false });
+			trips.createIndex('by-hasPushed', 'hasPushed', { unique: false });
 
-		void openDB<DriverTelemetrySchema>('driver-telemetry-cache', 1, {
-			upgrade(db) {
-				const trips = db.createObjectStore('trips', {
-					keyPath: 'id',
-				});
-				trips.createIndex('by-id', 'id', { unique: true });
-				trips.createIndex('by-startedAt', 'startedAt', { unique: false });
-				trips.createIndex('by-hasPushed', 'hasPushed', { unique: false });
-
-				const telemetry = db.createObjectStore('telemetry', {
-					keyPath: 'id',
-				});
-				telemetry.createIndex('by-id', 'id', { unique: true });
-				telemetry.createIndex('by-tripId', 'tripId', { unique: false });
-				telemetry.createIndex('by-time', 'time', { unique: false });
-				telemetry.createIndex('by-hasPushed', 'hasPushed', { unique: false });
-			},
-		}).then((newDb) => {
-			dbCache = newDb;
-			setDb(newDb);
-		});
-
-		return () => {
-			setDb(undefined);
-			dbCache?.close();
-		};
-	}, []);
+			const telemetry = db.createObjectStore('telemetry', {
+				keyPath: 'id',
+			});
+			telemetry.createIndex('by-id', 'id', { unique: true });
+			telemetry.createIndex('by-tripId', 'tripId', { unique: false });
+			telemetry.createIndex('by-time', 'time', { unique: false });
+			telemetry.createIndex('by-hasPushed', 'hasPushed', { unique: false });
+		},
+	});
 
 	// Handling incoming bluetooth data
 	const ble = use(BluetoothContext);
@@ -115,7 +104,7 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 
 	// Returning the value
 	const value = {
-		db: db as unknown as IDBPDatabase<CommonTelemetrySchema>,
+		db: db as unknown as IDBPDatabase<CommonTelemetrySchema> | undefined,
 		events,
 	};
 
