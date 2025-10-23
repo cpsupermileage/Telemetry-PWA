@@ -4,6 +4,7 @@ import { type IDBPDatabase } from 'idb';
 import { use, useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import {
 	CommonTelemetryContext,
+	type CommonTelemetryContextType,
 	type CommonTelemetryEventMap,
 	type CommonTelemetrySchema,
 } from './CommonTelemetryContextProvider';
@@ -117,12 +118,13 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 
 	// Returning the value
 	const value = {
+		type: 'driver',
 		db: db as unknown as IDBPDatabase<CommonTelemetrySchema> | undefined,
 		events,
 		trip,
 		setTrip,
 		setGeolocation,
-	};
+	} satisfies CommonTelemetryContextType;
 
 	return <CommonTelemetryContext value={value}>{children}</CommonTelemetryContext>;
 }

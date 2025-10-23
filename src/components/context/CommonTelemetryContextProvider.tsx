@@ -34,6 +34,7 @@ export interface CommonTelemetryEventMap {
  * The data type that the
  */
 export interface CommonTelemetryContextType {
+	type: 'driver' | 'spectator';
 	db?: IDBPDatabase<CommonTelemetrySchema>;
 	events: EventEmitter<CommonTelemetryEventMap>;
 	trip?: TripRow;
@@ -48,6 +49,7 @@ export interface CommonTelemetryContextType {
  * ```
  */
 export const CommonTelemetryContext = createContext<CommonTelemetryContextType>({
+	type: 'spectator',
 	db: undefined,
 	events: new EventEmitter(),
 	trip: undefined,
