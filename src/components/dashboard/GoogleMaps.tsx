@@ -1,8 +1,9 @@
 import { APIProvider, Map, type MapCameraChangedEvent, type MapCameraProps } from '@vis.gl/react-google-maps';
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { Alert, AlertTitle } from '../ui/alert';
 import { AlertCircleIcon, MapPinned } from 'lucide-react';
 import { Button } from '../ui/button';
+import { CommonTelemetryContext } from '../context/CommonTelemetryContextProvider';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.PUBLIC_GOOGLE_MAPS_API_KEY as string | undefined;
 
@@ -13,6 +14,8 @@ const INITIAL_CAMERA = {
 };
 
 function GoogleMaps() {
+	const telemetry = use(CommonTelemetryContext);
+
 	const [permissionState, setPermissionState] = useState<PermissionState>('denied');
 
 	useEffect(() => {
@@ -63,6 +66,7 @@ function GoogleMaps() {
 					},
 					heading: pos.coords.heading ?? undefined,
 				}));
+				telemetry.setGeolocation?.(pos);
 			},
 			(err) => {
 				if (err.code === GeolocationPositionError.PERMISSION_DENIED) setPermissionState('denied');
@@ -77,7 +81,7 @@ function GoogleMaps() {
 		);
 
 		return navigator.geolocation.clearWatch(watchId);
-	}, [permissionState]);
+	}, [permissionState, telemetry]);
 
 	return GOOGLE_MAPS_API_KEY && permissionState === 'granted' ? (
 		<APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
