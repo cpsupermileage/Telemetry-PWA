@@ -87,8 +87,9 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 				id,
 				...trip,
 			});
+			events.emit('update');
 		},
-		[db]
+		[db, events]
 	);
 
 	const cache = useRef<Partial<Record<CharacteristicKeys, number>>>({});
