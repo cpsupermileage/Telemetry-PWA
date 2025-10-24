@@ -66,24 +66,56 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 		},
 	});
 
+	// If not already exists, adds to db, if it does exist, patch the current entry
+	const setDriverTrip = useCallback(
+		async (trip: Omit<TripRow, 'id'> | TripRow | undefined) => {
+			if (trip === undefined) return setTrip(undefined);
+
+			if (!db) return console.error('Attempted to push trip to db, but db is undefined');
+
+			const id = 'id' in trip ? trip.id : Math.random(); // TODO: Better id generator
+
+			await db.put(
+				'trips',
+				{
+					id,
+					...trip,
+					hasPushed: 0,
+				},
+				id
+			);
+			setTrip({
+				id,
+				...trip,
+			});
+		},
+		[db]
+	);
+
 	const cache = useRef<Partial<Record<CharacteristicKeys, number>>>({});
 	const geoCache = useRef<GeolocationPosition | undefined>(undefined);
 
 	// Function for taking the cached data and putting it in the db
-	const pushToDB = useCallback(() => {
-		if (!db) return console.error('Attempted to push data to db, but db is undefined');
-		if (!trip) return console.error('Attempted to push data to db, but trip is undefined');
+	const postTelemetry = useCallback(async () => {
+		if (!db) return console.error('Attempted to push telemetry to db, but db is undefined');
+		if (!trip) return console.error('Attempted to push telemetry to db, but trip is undefined');
 		if (!cache.current && !geoCache.current) return; // If there is no new data, ignore
-		void db
-			.put('telemetry', {
-				id: Math.random(), // TODO: Better id generation
-				tripId: trip.id,
-				time: new Date(),
-				...cache,
-				lat: geoCache.current?.coords.latitude,
-				long: geoCache.current?.coords.longitude,
-				hasPushed: 0,
-			})
+
+		const id = Math.random(); // TODO: Better id generation
+		await db
+			.put(
+				'telemetry',
+				{
+					id,
+					tripId: trip.id,
+					time: new Date(),
+					...cache,
+					lat: geoCache.current?.coords.latitude,
+					long: geoCache.current?.coords.longitude,
+					hasPushed: 0,
+				},
+				id
+			)
 			.then(() => {
 				// Notify of db update so components can update
 				events.emit('update');
@@ -98,18 +130,18 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 		if (!ble) return;
 
 		// Makes it so pushToDB() will only be called max every 250ms
-		const tryPushToDB = debouncedFunction(pushToDB, 250);
+		const tryPost = debouncedFunction(postTelemetry, 250);
 
 		function onCharUpdate(name: CharacteristicKeys, value: number) {
 			cache.current[name] = value;
-			tryPushToDB();
+			tryPost();
 		}
 
 		ble.events.on('characteristicUpdate', onCharUpdate);
 		return () => {
 			ble.events.off('characteristicUpdate', onCharUpdate);
 		};
-	}, [ble, pushToDB]);
+	}, [ble, postTelemetry]);
 
 	// Exists so the google maps embed can update the values that are logged, puts them in a cache
 	const setGeolocation = useCallback((pos: GeolocationPosition) => {
@@ -122,7 +154,7 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 		db: db as unknown as IDBPDatabase<CommonTelemetrySchema> | undefined,
 		events,
 		trip,
-		setTrip,
+		setDriverTrip,
 		setGeolocation,
 	} satisfies CommonTelemetryContextType;
 

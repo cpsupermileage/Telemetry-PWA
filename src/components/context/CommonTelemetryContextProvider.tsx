@@ -2,7 +2,7 @@ import type { TelemetryRow } from '@/lib/types/TelemetryRow';
 import type { TripRow } from '@/lib/types/TripRow';
 import EventEmitter from 'eventemitter3';
 import type { DBSchema, IDBPDatabase } from 'idb';
-import { createContext, type Dispatch, type SetStateAction } from 'react';
+import { createContext } from 'react';
 
 export interface CommonTelemetrySchema extends DBSchema {
 	trips: {
@@ -38,7 +38,7 @@ export interface CommonTelemetryContextType {
 	db?: IDBPDatabase<CommonTelemetrySchema>;
 	events: EventEmitter<CommonTelemetryEventMap>;
 	trip?: TripRow;
-	setTrip: Dispatch<SetStateAction<TripRow | undefined>>;
+	setDriverTrip?: (trip: Omit<TripRow, 'id'> | TripRow | undefined) => Promise<void>;
 	setGeolocation?: (pos: GeolocationPosition) => void;
 }
 
@@ -53,9 +53,7 @@ export const CommonTelemetryContext = createContext<CommonTelemetryContextType>(
 	db: undefined,
 	events: new EventEmitter(),
 	trip: undefined,
-	setTrip: () => {
-		throw new Error('setTrip not implemented');
-	},
+	setDriverTrip: undefined,
 	setGeolocation: undefined,
 });
 

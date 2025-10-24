@@ -3,8 +3,33 @@ import Widget from '@/components/dashboard/Widget';
 import './DriverView.css';
 import { WidgetStatistic } from '@/components/dashboard/WidgetStatistic';
 import WidgetSpeedometer from '@/components/dashboard/WidgetSpeedometer';
+import { use } from 'react';
+import { CommonTelemetryContext } from '@/components/context/CommonTelemetryContextProvider';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Octagon, Play } from 'lucide-react';
 
 function DriverView() {
+	const telemetry = use(CommonTelemetryContext);
+
+	function startTrip() {
+		if (!telemetry.setDriverTrip || !telemetry.trip) return toast.error('Function not available');
+		telemetry
+			.setDriverTrip({
+				...telemetry.trip,
+				startedAt: new Date(),
+			})
+			.catch((err) => {
+				console.error(err);
+				toast.error('Failed to start trip: ' + (err instanceof Error ? err.message : 'Unknown Error'));
+			});
+	}
+
+	function stopTrip() {
+		if (!telemetry.setDriverTrip) return toast.error('Function not available');
+		void telemetry.setDriverTrip(undefined);
+	}
+
 	return (
 		<section id="driver-view" className="grid h-full w-full gap-2 p-2">
 			<Widget style={{ gridArea: 'a' }}>
@@ -20,8 +45,8 @@ function DriverView() {
 				<WidgetStatistic value={23.2} unit="mph" delta={0} size="2xl" />
 			</Widget>
 			<Widget style={{ gridArea: 'b' }}>
-				<WidgetStatistic value="15:34" unit="Time Remaining" delta={1} size="xl" className="[small]:mb-2" />
-				<WidgetStatistic value="4.6" unit="Miles Remaining" delta={1} size="lg" />
+				<WidgetStatistic value="15:34" unit="Time Remaining" delta={1} size="lg" className="[small]:mb-2" />
+				<WidgetStatistic value="4.6" unit="Miles Remaining" delta={1} size="lg" className="[small]:mb-2" />
 			</Widget>
 			<Widget style={{ gridArea: 'c' }}>
 				<WidgetSpeedometer
@@ -39,9 +64,31 @@ function DriverView() {
 				<WidgetStatistic value={2.42} unit="Average Mi/KWh" delta={2} size="xl" className="[small]:mb-2" />
 				<WidgetStatistic value={41.2} unit="Volts" delta={1} size="lg" />
 			</Widget>
-			<Widget style={{ gridArea: 'e' }}>
-				<GoogleMaps />
-			</Widget>
+			<div style={{ gridArea: 'e' }} className="flex flex-col gap-2">
+				<Widget className="h-full">
+					<GoogleMaps />
+				</Widget>
+				{telemetry.setDriverTrip && (
+					<Widget className="p-4">
+						{telemetry.trip ? (
+							!telemetry.trip.startedAt ? (
+								<Button onClick={startTrip} className="bg-green-400 !px-8 font-bold hover:bg-green-500">
+									<Play /> Start Trip
+								</Button>
+							) : (
+								<Button onClick={stopTrip} className="bg-red-400 !px-8 font-bold hover:bg-red-500">
+									<Octagon /> Stop Trip
+								</Button>
+							)
+						) : (
+							<div className="text-center text-sm">
+								You must define your trip above <br />
+								<i>before</i> starting the timer
+							</div>
+						)}
+					</Widget>
+				)}
+			</div>
 		</section>
 	);
 }
