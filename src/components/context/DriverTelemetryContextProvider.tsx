@@ -12,6 +12,7 @@ import EventEmitter from 'eventemitter3';
 import { BluetoothContext, type CharacteristicKeys } from './BluetoothContextProvider';
 import useIndexedDB from '@/lib/utils/useIndexedDB';
 import debouncedFunction from '@/lib/utils/debouncedFunction';
+import genRandomId from '@/lib/utils/genRandomId';
 
 export interface DriverTelemetrySchema extends CommonTelemetrySchema {
 	trips: {
@@ -50,6 +51,7 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 		upgrade(db) {
 			const trips = db.createObjectStore('trips', {
 				keyPath: 'id',
+				autoIncrement: false,
 			});
 			trips.createIndex('by-id', 'id', { unique: true });
 			trips.createIndex('by-createdAt', 'createdAt', { unique: false });
@@ -58,6 +60,7 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 
 			const telemetry = db.createObjectStore('telemetry', {
 				keyPath: 'id',
+				autoIncrement: false,
 			});
 			telemetry.createIndex('by-id', 'id', { unique: true });
 			telemetry.createIndex('by-tripId', 'tripId', { unique: false });
@@ -73,17 +76,13 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 
 			if (!db) return console.error('Attempted to push trip to db, but db is undefined');
 
-			const id = 'id' in trip ? trip.id : Math.random(); // TODO: Better id generator
+			const id = 'id' in trip ? trip.id : genRandomId();
 
-			await db.put(
-				'trips',
-				{
-					id,
-					...trip,
-					hasPushed: 0,
-				},
-				id
-			);
+			await db.put('trips', {
+				...trip,
+				id,
+				hasPushed: 0,
+			});
 			setTrip({
 				id,
 				...trip,
@@ -101,21 +100,16 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 		if (!trip) return console.error('Attempted to push telemetry to db, but trip is undefined');
 		if (!cache.current && !geoCache.current) return; // If there is no new data, ignore
 
-		const id = Math.random(); // TODO: Better id generation
 		await db
-			.put(
-				'telemetry',
-				{
-					id,
-					tripId: trip.id,
-					time: new Date(),
-					...cache,
-					lat: geoCache.current?.coords.latitude,
-					long: geoCache.current?.coords.longitude,
-					hasPushed: 0,
-				},
-				id
-			)
+			.put('telemetry', {
+				id: genRandomId(),
+				tripId: trip.id,
+				time: new Date(),
+				...cache,
+				lat: geoCache.current?.coords.latitude,
+				long: geoCache.current?.coords.longitude,
+				hasPushed: 0,
+			})
 			.then(() => {
 				// Notify of db update so components can update
 				events.emit('update');
