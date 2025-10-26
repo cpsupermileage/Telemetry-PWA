@@ -13,6 +13,7 @@ import { BluetoothContext, type CharacteristicKeys } from './BluetoothContextPro
 import useIndexedDB from '@/lib/utils/useIndexedDB';
 import debouncedFunction from '@/lib/utils/debouncedFunction';
 import genRandomId from '@/lib/utils/genRandomId';
+import useSyncIndexedDB from '@/lib/utils/useSyncIndexedDB';
 
 export interface DriverTelemetrySchema extends CommonTelemetrySchema {
 	trips: {
@@ -69,6 +70,18 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 		},
 	});
 
+	const syncTrips = useSyncIndexedDB(db, 'trips', '/api/trips/many');
+	const syncTelemetry = useSyncIndexedDB(db, 'telemetry', '/api/telemetry/many');
+
+	useEffect(() => {
+		function sync() {
+			void syncTrips().catch(console.error);
+			void syncTelemetry().catch(console.error);
+		}
+		const interval = setInterval(sync, 10 * 1000); // 10 seconds
+		return () => clearInterval(interval);
+	});
+
 	// If not already exists, adds to db, if it does exist, patch the current entry
 	const setDriverTrip = useCallback(
 		async (trip: Omit<TripRow, 'id'> | TripRow | undefined) => {
@@ -88,8 +101,9 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 				...trip,
 			});
 			events.emit('update');
+			void syncTrips();
 		},
-		[db, events]
+		[db, events, syncTrips]
 	);
 
 	const cache = useRef<Partial<Record<CharacteristicKeys, number>>>({});
@@ -101,24 +115,24 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 		if (!trip) return console.error('Attempted to push telemetry to db, but trip is undefined');
 		if (!cache.current && !geoCache.current) return; // If there is no new data, ignore
 
-		await db
-			.put('telemetry', {
-				id: genRandomId(),
-				tripId: trip.id,
-				time: new Date(),
-				...cache,
-				lat: geoCache.current?.coords.latitude,
-				long: geoCache.current?.coords.longitude,
-				hasPushed: 0,
-			})
-			.then(() => {
-				// Notify of db update so components can update
-				events.emit('update');
-			});
+		await db.put('telemetry', {
+			id: genRandomId(),
+			tripId: trip.id,
+			time: new Date().toISOString(),
+			...cache,
+			lat: geoCache.current?.coords.latitude,
+			long: geoCache.current?.coords.longitude,
+			hasPushed: 0,
+		});
+
 		// Clear caches immediately after we push to db
 		cache.current = {};
 		geoCache.current = undefined;
-	}, [db, events, trip]);
+		// Notify of db update so components can update
+		events.emit('update');
+		// Update the server
+		void syncTelemetry().catch(console.error);
+	}, [db, events, trip, syncTelemetry]);
 
 	// Handle incoming ble data and put the characteristic updates in the cache
 	useEffect(() => {

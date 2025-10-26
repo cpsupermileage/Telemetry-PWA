@@ -17,7 +17,7 @@ function DriverView() {
 		telemetry
 			.setDriverTrip({
 				...telemetry.trip,
-				startedAt: new Date(),
+				startedAt: new Date().toISOString(),
 			})
 			.catch((err) => {
 				console.error(err);

@@ -28,7 +28,7 @@ function TripView() {
 			.setDriverTrip({
 				name: name || placeholder,
 				type: tripType,
-				createdAt: new Date(),
+				createdAt: new Date().toISOString(),
 			})
 			.catch((err) => {
 				console.error(err);

@@ -4,8 +4,8 @@ export interface TripRow {
 	id: number;
 	name: string;
 	type: TripType;
-	createdAt: Date;
-	startedAt?: Date;
+	createdAt: string;
+	startedAt?: string;
 }
 
 export interface LocalTripRow extends TripRow {

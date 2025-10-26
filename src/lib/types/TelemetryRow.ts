@@ -3,7 +3,7 @@ import type { MC_FAULT_CODE } from './CarState';
 export interface TelemetryRow {
 	id: number;
 	tripId: number;
-	time: Date;
+	time: string;
 	// data values
 	tempMosfet?: number;
 	tempMotor?: number;
