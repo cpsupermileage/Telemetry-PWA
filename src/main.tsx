@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import DriverTelemetryContextProvider from './components/context/DriverTelemetryContextProvider';
 import { Toaster } from './components/ui/sonner';
+import SpectatorTelemetryContextProvider from './components/context/SpectatorTelemetryContextProvider';
 
 createRoot(document.getElementById('root')!).render(
 	<StrictMode>
@@ -22,7 +23,14 @@ createRoot(document.getElementById('root')!).render(
 				>
 					<Route path="dashboard" element={<Dashboard />} />
 				</Route>
-				<Route path="spectator">
+				<Route
+					path="spectator"
+					element={
+						<SpectatorTelemetryContextProvider>
+							<Outlet />
+						</SpectatorTelemetryContextProvider>
+					}
+				>
 					<Route path="dashboard" element={<Dashboard />} />
 				</Route>
 			</Routes>

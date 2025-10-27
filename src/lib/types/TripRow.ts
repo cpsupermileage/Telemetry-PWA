@@ -1,11 +1,12 @@
+import type { Row } from '@electric-sql/client';
 import type { TripType } from './TripType';
 
-export interface TripRow {
+export interface TripRow extends Row {
 	id: number;
 	name: string;
 	type: TripType;
 	createdAt: string;
-	startedAt?: string;
+	startedAt: string | null;
 }
 
 export interface LocalTripRow extends TripRow {
