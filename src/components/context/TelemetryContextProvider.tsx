@@ -68,9 +68,9 @@ export interface TelemetryEventMap {
 const API_BASE = import.meta.env.PUBLIC_API_BASE as string | undefined;
 
 /**
- * A wrapper for providing the DriverTelemetryContext values to its children.
+ * A wrapper for providing the TelemetryContext values to its children.
  */
-export default function DriverTelemetryContextProvider({ children }: { children: React.ReactNode }) {
+export default function TelemetryContextProvider({ children }: { children: React.ReactNode }) {
 	const [events] = useState<EventEmitter<TelemetryEventMap>>(() => new EventEmitter());
 
 	const [syncTrips, setSyncTrips] = useState<boolean>(true);
