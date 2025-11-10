@@ -5,6 +5,7 @@ import TripView from './dashboard/TripView';
 import BluetoothControl from '@/components/dashboard/BluetoothControl';
 import Menu from '@/components/dashboard/Menu';
 import { DriverContext } from '@/components/context/DriverContextProvider';
+import TripSelection from './dashboard/TripSelection';
 
 function Dashboard() {
 	const driver = use(DriverContext);
@@ -12,7 +13,7 @@ function Dashboard() {
 	return (
 		<main className="relative mx-auto h-screen max-w-4xl snap-y snap-mandatory overflow-y-scroll">
 			<div className="@container h-screen max-h-[600px] w-full snap-center md:max-h-96">
-				{driver !== undefined ? <TripView /> : <></>}
+				{driver !== undefined ? <TripView /> : <TripSelection />}
 			</div>
 			<div className="@container h-screen max-h-[600px] w-full snap-center md:max-h-96">
 				<DriverView />
