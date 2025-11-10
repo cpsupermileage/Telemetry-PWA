@@ -1,4 +1,4 @@
-import { CommonTelemetryContext } from '@/components/context/CommonTelemetryContextProvider';
+import { DriverContext } from '@/components/context/DriverContextProvider';
 import Widget from '@/components/dashboard/Widget';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { use, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 function TripView() {
-	const telemetry = use(CommonTelemetryContext);
+	const driver = use(DriverContext);
 
 	const [name, setName] = useState('');
 	const [tripType, setTripType] = useLocalStorageState('tripType', TripType.TESTING);
@@ -22,10 +22,10 @@ function TripView() {
 	);
 
 	function createTrip() {
-		if (!telemetry.setDriverTrip) return toast.error('Function not available');
+		if (!driver) return toast.error('Function not available');
 
-		telemetry
-			.setDriverTrip({
+		driver
+			.setTrip({
 				name: name || placeholder,
 				type: tripType,
 				createdAt: new Date().toISOString(),
@@ -37,8 +37,8 @@ function TripView() {
 	}
 
 	function resetTrip() {
-		if (!telemetry.setDriverTrip) return toast.error('Function not available');
-		void telemetry.setDriverTrip(undefined);
+		if (!driver) return toast.error('Function not available');
+		void driver.setTrip(undefined);
 	}
 
 	return (
@@ -49,7 +49,7 @@ function TripView() {
 						Trip Name
 					</Label>
 					<Input
-						disabled={!!telemetry.trip}
+						disabled={!!driver?.trip}
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						id="tripName"
@@ -58,7 +58,7 @@ function TripView() {
 					/>
 				</div>
 				<RadioGroup
-					disabled={!!telemetry.trip}
+					disabled={!!driver?.trip}
 					value={tripType + ''}
 					onValueChange={(val) => setTripType(parseInt(val))}
 					className="flex flex-wrap gap-2"
@@ -78,7 +78,7 @@ function TripView() {
 				</RadioGroup>
 				<Separator />
 				<div className="flex gap-4">
-					{!telemetry.trip ? (
+					{!driver?.trip ? (
 						<Button onClick={createTrip}>Create Trip</Button>
 					) : (
 						<Button onClick={resetTrip} variant="secondary">

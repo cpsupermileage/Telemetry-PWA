@@ -1,20 +1,17 @@
-import type {
-	CommonTelemetryEventMap,
-	CommonTelemetrySchema,
-} from '@/components/context/CommonTelemetryContextProvider';
 import { isChangeMessage, isControlMessage, ShapeStream, type ShapeStreamOptions } from '@electric-sql/client';
 import type { IDBPDatabase, StoreNames } from 'idb';
 import { useEffect } from 'react';
 import type { TripRow } from '../types/TripRow';
 import type { TelemetryRow } from '../types/TelemetryRow';
 import type EventEmitter from 'eventemitter3';
+import type { TelemetryEventMap, TelemetrySchema } from '@/components/context/TelemetryContextProvider';
 
 // Leave options as undefined to disable
 export default function useSyncShapeStreamToIndexedDB(
 	options: ShapeStreamOptions<never> | undefined,
-	db: IDBPDatabase<CommonTelemetrySchema> | undefined,
-	storeName: StoreNames<CommonTelemetrySchema>,
-	eventEmitter?: EventEmitter<CommonTelemetryEventMap>
+	db: IDBPDatabase<TelemetrySchema> | undefined,
+	storeName: StoreNames<TelemetrySchema>,
+	eventEmitter?: EventEmitter<TelemetryEventMap>
 ) {
 	useEffect(() => {
 		if (!db || !options) return;
@@ -40,11 +37,11 @@ export default function useSyncShapeStreamToIndexedDB(
 				if (isChangeMessage(message)) {
 					switch (message.headers.operation) {
 						case 'insert':
-							await store.put(message.value);
+							await store.put({ ...message.value, hasLocalChanges: 0 });
 							break;
 						case 'update': {
 							const old = await store.get(message.value.id);
-							await store.put({ ...old, ...message.value });
+							await store.put({ hasLocalChanges: 0, ...old, ...message.value });
 							break;
 						}
 						case 'delete':

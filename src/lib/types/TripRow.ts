@@ -10,5 +10,5 @@ export interface TripRow extends Row {
 }
 
 export interface LocalTripRow extends TripRow {
-	hasPushed: number; // 0 or 1
+	hasLocalChanges: number; // 0 or 1
 }

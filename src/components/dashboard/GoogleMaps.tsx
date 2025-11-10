@@ -3,7 +3,7 @@ import { use, useEffect, useState } from 'react';
 import { Alert, AlertTitle } from '../ui/alert';
 import { AlertCircleIcon, MapPinned } from 'lucide-react';
 import { Button } from '../ui/button';
-import { CommonTelemetryContext } from '../context/CommonTelemetryContextProvider';
+import { DriverContext } from '../context/DriverContextProvider';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.PUBLIC_GOOGLE_MAPS_API_KEY as string | undefined;
 
@@ -14,7 +14,7 @@ const INITIAL_CAMERA = {
 };
 
 function GoogleMaps() {
-	const telemetry = use(CommonTelemetryContext);
+	const driver = use(DriverContext);
 
 	const [permissionState, setPermissionState] = useState<PermissionState>('denied');
 
@@ -66,7 +66,7 @@ function GoogleMaps() {
 					},
 					heading: pos.coords.heading ?? undefined,
 				}));
-				telemetry.setGeolocation?.(pos);
+				driver?.setGeolocation?.(pos);
 			},
 			(err) => {
 				if (err.code === GeolocationPositionError.PERMISSION_DENIED) setPermissionState('denied');
@@ -81,7 +81,7 @@ function GoogleMaps() {
 		);
 
 		return navigator.geolocation.clearWatch(watchId);
-	}, [permissionState, telemetry]);
+	}, [permissionState, driver]);
 
 	return GOOGLE_MAPS_API_KEY && permissionState === 'granted' ? (
 		<APIProvider apiKey={GOOGLE_MAPS_API_KEY}>

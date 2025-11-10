@@ -16,5 +16,5 @@ export interface TelemetryRow extends Row, CarState {
 }
 
 export interface LocalTelemetryRow extends TelemetryRow {
-	hasPushed: number; // 0 or 1
+	hasLocalChanges: number; // 0 or 1
 }

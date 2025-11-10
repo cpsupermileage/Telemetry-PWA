@@ -1,16 +1,16 @@
 import { type IDBPDatabase, type StoreNames } from 'idb';
 import { useCallback } from 'react';
 import apiRequest from './apiClient';
-import type { DriverTelemetrySchema } from '@/components/context/DriverTelemetryContextProvider';
+import type { TelemetrySchema } from '@/components/context/TelemetryContextProvider';
 
-export default function useSyncIndexedDB(
-	db: IDBPDatabase<DriverTelemetrySchema> | undefined,
-	storeName: StoreNames<DriverTelemetrySchema>,
+export default function useSyncIndexedDBToCloud(
+	db: IDBPDatabase<TelemetrySchema> | undefined,
+	storeName: StoreNames<TelemetrySchema>,
 	postUrl: string
 ): () => Promise<void> {
 	const sync = useCallback(async () => {
 		if (!db) throw new Error('Cannot sync when db is undefined');
-		const toSync = await db.getAllFromIndex(storeName, 'by-hasPushed', 0, 100);
+		const toSync = await db.getAllFromIndex(storeName, 'by-hasLocalChanges', 1, 100);
 
 		if (toSync.length <= 0) return;
 
