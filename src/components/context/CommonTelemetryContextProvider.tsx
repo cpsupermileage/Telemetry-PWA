@@ -39,6 +39,7 @@ export interface CommonTelemetryContextType {
 	events: EventEmitter<CommonTelemetryEventMap>;
 	trip?: TripRow;
 	setDriverTrip?: (trip: Omit<TripRow, 'id'> | TripRow | undefined) => Promise<void>;
+	setSpectatorTripId?: (tripId: number) => void;
 	setGeolocation?: (pos: GeolocationPosition) => void;
 }
 

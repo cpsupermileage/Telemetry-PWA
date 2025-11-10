@@ -14,6 +14,7 @@ import useIndexedDB from '@/lib/utils/useIndexedDB';
 import debouncedFunction from '@/lib/utils/debouncedFunction';
 import genRandomId from '@/lib/utils/genRandomId';
 import useSyncIndexedDB from '@/lib/utils/useSyncIndexedDB';
+import type { CarState } from '@/lib/types/CarState';
 
 export interface DriverTelemetrySchema extends CommonTelemetrySchema {
 	trips: {
@@ -89,16 +90,18 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 
 			if (!db) return console.error('Attempted to push trip to db, but db is undefined');
 
-			const id = 'id' in trip ? trip.id : genRandomId();
+			const id = 'id' in trip && typeof trip.id === 'number' ? trip.id : genRandomId();
 
+			// @ts-expect-error Trust me bro
 			await db.put('trips', {
 				...trip,
 				id,
 				hasPushed: 0,
 			});
+			// @ts-expect-error Trust me bro
 			setTrip({
-				id,
 				...trip,
+				id,
 			});
 			events.emit('update');
 			void syncTrips();
@@ -106,7 +109,7 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 		[db, events, syncTrips]
 	);
 
-	const cache = useRef<Partial<Record<CharacteristicKeys, number>>>({});
+	const cache = useRef<Partial<CarState>>({});
 	const geoCache = useRef<GeolocationPosition | undefined>(undefined);
 
 	// Function for taking the cached data and putting it in the db
@@ -119,9 +122,23 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 			id: genRandomId(),
 			tripId: trip.id,
 			time: new Date().toISOString(),
-			...cache,
-			lat: geoCache.current?.coords.latitude,
-			long: geoCache.current?.coords.longitude,
+			...{
+				// Default all values as null
+				tempMosfet: null,
+				tempMotor: null,
+				motorCurrent: null,
+				inputCurrent: null,
+				dutyCycle: null,
+				tacho: null,
+				rpm: null,
+				volts: null,
+				wattHours: null,
+				error: null,
+				// Inject cache
+				...cache,
+			},
+			lat: geoCache.current?.coords.latitude ?? null,
+			long: geoCache.current?.coords.longitude ?? null,
 			hasPushed: 0,
 		});
 

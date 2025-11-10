@@ -1,4 +1,3 @@
-import type { TripRow } from '@/lib/types/TripRow';
 import { useEffect, useState, type ReactElement } from 'react';
 import {
 	CommonTelemetryContext,
@@ -8,17 +7,18 @@ import {
 } from './CommonTelemetryContextProvider';
 import EventEmitter from 'eventemitter3';
 import useIndexedDB from '@/lib/utils/useIndexedDB';
-import { ShapeStream } from '@electric-sql/client';
+import useSyncShapeStreamToIndexedDB from '@/lib/utils/useSyncShapeStreamToIndexedDB';
 import { camelCaseKeys } from '@/lib/utils/camelCase';
+import type { TripRow } from '@/lib/types/TripRow';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE as string | undefined;
 
 /**
  * A wrapper for providing the SpectatorTelemetryContext values to its children.
  */
-export default function SPectatorTelemetryContextProvider({ children }: { children: ReactElement }) {
+export default function SpectatorTelemetryContextProvider({ children }: { children: ReactElement }) {
 	const [events] = useState<EventEmitter<CommonTelemetryEventMap>>(() => new EventEmitter());
-	const [trip] = useState<TripRow | undefined>(undefined);
+	const [tripId, setTripId] = useState<number | undefined>(undefined);
 
 	// Handle the db
 	const db = useIndexedDB<CommonTelemetrySchema>('spectator-telemetry-cache', 1, {
@@ -41,24 +41,26 @@ export default function SPectatorTelemetryContextProvider({ children }: { childr
 		},
 	});
 
+	useSyncShapeStreamToIndexedDB(
+		{ url: new URL('/api/trips', API_BASE).toString(), subscribe: true, transformer: camelCaseKeys },
+		db,
+		'trips',
+		events
+	);
+	useSyncShapeStreamToIndexedDB(
+		tripId
+			? { url: new URL('/api/telemetry/' + tripId, API_BASE).toString(), subscribe: true, transformer: camelCaseKeys }
+			: undefined,
+		db,
+		'telemetry',
+		events
+	);
+
+	const [trip, setTrip] = useState<TripRow | undefined>(undefined);
 	useEffect(() => {
-		const aborter = new AbortController();
-		const stream = new ShapeStream<TripRow>({
-			url: new URL('/api/trips', API_BASE).toString(),
-			subscribe: true,
-			signal: aborter.signal,
-			transformer: camelCaseKeys,
-		});
-
-		stream.subscribe((messages) => {
-			messages.forEach(console.log);
-		});
-
-		return () => {
-			aborter.abort();
-			stream.unsubscribeAll();
-		};
-	}, []);
+		if (!db || !tripId) return;
+		void db.get('trips', tripId).then(setTrip);
+	}, [db, tripId]);
 
 	// Returning the value
 	const value = {
@@ -66,6 +68,7 @@ export default function SPectatorTelemetryContextProvider({ children }: { childr
 		db,
 		events,
 		trip,
+		setSpectatorTripId: setTripId,
 	} satisfies CommonTelemetryContextType;
 
 	return <CommonTelemetryContext value={value}>{children}</CommonTelemetryContext>;

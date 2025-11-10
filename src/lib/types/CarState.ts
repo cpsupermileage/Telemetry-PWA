@@ -6,45 +6,45 @@ export interface CarState {
 	/**
 	 * The temperature of the mosfet on the motor controller
 	 */
-	tempMosfet: number;
+	tempMosfet: number | null;
 	/**
 	 * Temperature of the motor
 	 */
-	tempMotor: number;
+	tempMotor: number | null;
 	/**
 	 * The average amps fed to the motor since the last update
 	 */
-	motorCurrent: number;
+	motorCurrent: number | null;
 	/**
 	 * The average input amps into the motor controller since the last update
 	 * @see https://github.com/vedderb/bldc/blob/master/motor/mc_interface.c#L1374
 	 */
-	inputCurrent: number;
+	inputCurrent: number | null;
 	/**
 	 * The current duty cycle of the motor
 	 */
-	dutyCycle: number;
+	dutyCycle: number | null;
 	/**
 	 * The revolutions per minute of the car's **motor**.
 	 */
-	tacho: number;
+	tacho: number | null;
 	/**
 	 * The revolutions per minute of the car's **wheels**.
 	 */
-	rpm: number;
+	rpm: number | null;
 	/**
 	 * The current voltage into the motor
 	 */
-	volts: number;
+	volts: number | null;
 	/**
 	 * The total watt hours that have been consumed since the motor controller was reset
 	 */
-	wattHours: number;
+	wattHours: number | null;
 	/**
 	 * The fault code, if any, currently reported by the motor controller
 	 * @default NONE = 0
 	 */
-	error: MC_FAULT_CODE;
+	error: MC_FAULT_CODE | null;
 }
 
 // https://github.com/SolidGeek/VescUart/blob/master/src/datatypes.h#L124
