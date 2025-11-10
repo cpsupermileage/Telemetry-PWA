@@ -14,7 +14,11 @@ export default function useSyncIndexedDBToCloud(
 
 		if (toSync.length <= 0) return;
 
-		await apiRequest('POST', postUrl, toSync);
+		await apiRequest(
+			'POST',
+			postUrl,
+			toSync.map((entry) => ({ ...entry, hasLocalChanges: undefined }))
+		);
 
 		const tx = db.transaction(storeName, 'readwrite');
 		const store = tx.objectStore(storeName);
@@ -22,7 +26,7 @@ export default function useSyncIndexedDBToCloud(
 			const entry = await store.index('by-id').get(id);
 			await store.put({
 				...entry!,
-				hasPushed: 1,
+				hasLocalChanges: 0,
 			});
 		}
 		await tx.done;

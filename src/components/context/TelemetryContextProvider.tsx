@@ -45,6 +45,7 @@ export interface TelemetrySchema extends DBSchema {
 			'by-id': number;
 			'by-createdAt': Date;
 			'by-startedAt': Date;
+			'by-endedAt': Date;
 			'by-hasLocalChanges': number;
 		};
 	};
@@ -85,6 +86,7 @@ export default function DriverTelemetryContextProvider({ children }: { children:
 			trips.createIndex('by-id', 'id', { unique: true });
 			trips.createIndex('by-createdAt', 'createdAt', { unique: false });
 			trips.createIndex('by-startedAt', 'startedAt', { unique: false });
+			trips.createIndex('by-endedAt', 'endedAt', { unique: false });
 			trips.createIndex('by-hasLocalChanges', 'hasLocalChanges', { unique: false });
 
 			const telemetry = db.createObjectStore('telemetry', {

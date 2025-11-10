@@ -4,19 +4,19 @@ import './DriverView.css';
 import { WidgetStatistic } from '@/components/dashboard/WidgetStatistic';
 import WidgetSpeedometer from '@/components/dashboard/WidgetSpeedometer';
 import { use } from 'react';
-import { CommonTelemetryContext } from '@/components/context/CommonTelemetryContextProvider';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Octagon, Play } from 'lucide-react';
+import { DriverContext } from '@/components/context/DriverContextProvider';
 
 function DriverView() {
-	const telemetry = use(CommonTelemetryContext);
+	const driver = use(DriverContext);
 
 	function startTrip() {
-		if (!telemetry.setDriverTrip || !telemetry.trip) return toast.error('Function not available');
-		telemetry
-			.setDriverTrip({
-				...telemetry.trip,
+		if (!driver) return toast.error('Function not available');
+		driver
+			.setTrip({
+				...driver.trip,
 				startedAt: new Date().toISOString(),
 			})
 			.catch((err) => {
@@ -26,8 +26,18 @@ function DriverView() {
 	}
 
 	function stopTrip() {
-		if (!telemetry.setDriverTrip) return toast.error('Function not available');
-		void telemetry.setDriverTrip(undefined);
+		if (!driver) return toast.error('Function not available');
+		if (driver.trip === undefined) return;
+		driver
+			.setTrip({
+				...driver.trip,
+				endedAt: new Date().toISOString(),
+			})
+			.then(() => driver.setTrip(undefined))
+			.catch((err) => {
+				console.error(err);
+				toast.error('Failed to stop trip: ' + (err instanceof Error ? err.message : 'Unknown Error'));
+			});
 	}
 
 	return (
@@ -68,10 +78,10 @@ function DriverView() {
 				<Widget className="h-full">
 					<GoogleMaps />
 				</Widget>
-				{telemetry.setDriverTrip && (
+				{driver && (
 					<Widget className="p-4">
-						{telemetry.trip ? (
-							!telemetry.trip.startedAt ? (
+						{driver.trip ? (
+							!driver.trip.startedAt ? (
 								<Button onClick={startTrip} className="bg-green-400 !px-8 font-bold hover:bg-green-500">
 									<Play /> Start Trip
 								</Button>

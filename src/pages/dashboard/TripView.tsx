@@ -38,7 +38,17 @@ function TripView() {
 
 	function resetTrip() {
 		if (!driver) return toast.error('Function not available');
-		void driver.setTrip(undefined);
+		if (driver.trip == undefined) return;
+		driver
+			.setTrip({
+				...driver.trip,
+				endedAt: new Date().toISOString(),
+			})
+			.then(() => driver.setTrip(undefined))
+			.catch((err) => {
+				console.error(err);
+				toast.error('Failed to stop trip: ' + (err instanceof Error ? err.message : 'Unknown Error'));
+			});
 	}
 
 	return (
