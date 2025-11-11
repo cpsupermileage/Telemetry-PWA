@@ -5,7 +5,7 @@ export interface TelemetryRow extends Row, CarState {
 	// header
 	id: number;
 	tripId: number;
-	time: string;
+	time: number;
 
 	// data values
 	// inherited from CarState

@@ -11,6 +11,7 @@ import { DriverContext } from '@/components/context/DriverContextProvider';
 import useQuery from '@/lib/utils/useQuery';
 import { MOTOR_STEPS, RACE_LENGTH_MILES, RACE_TIME_MILLIS, WHEEL_RADIUS_METERS } from '@/constants';
 import type { LocalTelemetryRow } from '@/lib/types/TelemetryRow';
+import dayjs from '@/lib/utils/dayjs';
 
 function DriverView() {
 	const driver = use(DriverContext);
@@ -20,7 +21,7 @@ function DriverView() {
 		driver
 			.setTrip({
 				...driver.trip,
-				startedAt: new Date().toISOString(),
+				startedAt: Date.now(),
 			})
 			.catch((err) => {
 				console.error(err);
@@ -34,7 +35,7 @@ function DriverView() {
 		driver
 			.setTrip({
 				...driver.trip,
-				endedAt: new Date().toISOString(),
+				endedAt: Date.now(),
 			})
 			.then(() => driver.setTrip(undefined))
 			.catch((err) => {
@@ -59,7 +60,7 @@ function DriverView() {
 				cursor = await tx
 					.objectStore('telemetry')
 					.index('by-time')
-					.openCursor(IDBKeyRange.lowerBound(new Date(driver.trip.startedAt)), 'next');
+					.openCursor(IDBKeyRange.lowerBound(driver.trip.startedAt), 'next');
 				first = cursor?.value;
 			} else {
 				first = undefined;
@@ -80,8 +81,11 @@ function DriverView() {
 	const timeRemaining = useMemo(() => {
 		if (!carData || !driver?.trip?.startedAt) return undefined;
 		// How long since the trip has started
-		const dt = new Date(carData.time).getTime() - new Date(driver.trip.startedAt).getTime();
-		return RACE_TIME_MILLIS - dt;
+		const dt = +dayjs(carData.time) - +dayjs(driver.trip.startedAt);
+		const millis = RACE_TIME_MILLIS - dt;
+		const m = Math.floor(millis / 1000 / 60) + '';
+		const s = Math.abs(Math.floor(millis / 1000) % 60) + '';
+		return `${m}:${s.padStart(2, '0')}`;
 	}, [carData, driver]);
 
 	const milesRemaining = useMemo(() => {

@@ -60,7 +60,7 @@ export default function DriverContextProvider({ children }: { children: React.Re
 		await db.put('telemetry', {
 			id: genRandomId(),
 			tripId: trip.id,
-			time: new Date().toISOString(),
+			time: Date.now(),
 			...{
 				// Default all values as null
 				tempMosfet: null,

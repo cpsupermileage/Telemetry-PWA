@@ -43,9 +43,9 @@ export interface TelemetrySchema extends DBSchema {
 		value: LocalTripRow;
 		indexes: {
 			'by-id': number;
-			'by-createdAt': Date;
-			'by-startedAt': Date;
-			'by-endedAt': Date;
+			'by-createdAt': number;
+			'by-startedAt': number;
+			'by-endedAt': number;
 			'by-hasLocalChanges': number;
 		};
 	};
@@ -55,7 +55,7 @@ export interface TelemetrySchema extends DBSchema {
 		indexes: {
 			'by-id': number;
 			'by-tripId': number;
-			'by-time': Date;
+			'by-time': number;
 			'by-hasLocalChanges': number;
 		};
 	};

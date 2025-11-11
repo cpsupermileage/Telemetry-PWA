@@ -11,7 +11,7 @@ function TripSelection() {
 	const spectator = use(SpectatorContext);
 
 	const trips = useQuery(async (db) => {
-		return (await db.getAll('trips')).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+		return (await db.getAll('trips')).sort((a, b) => b.createdAt - a.createdAt);
 	}, []);
 
 	const currentTripId = useMemo(() => {
@@ -20,7 +20,7 @@ function TripSelection() {
 				!trip.endedAt &&
 				trip.startedAt &&
 				// eslint-disable-next-line react-hooks/purity
-				new Date(trip.startedAt).getTime() > Date.now() - 6 * 60 * 60 * 1000
+				trip.startedAt > Date.now() - 6 * 60 * 60 * 1000
 		)?.id;
 	}, [trips]);
 

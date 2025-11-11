@@ -5,9 +5,9 @@ export interface TripRow extends Row {
 	id: number;
 	name: string;
 	type: TripType;
-	createdAt: string;
-	startedAt: string | null;
-	endedAt: string | null;
+	createdAt: number;
+	startedAt: number | null;
+	endedAt: number | null;
 }
 
 export interface LocalTripRow extends TripRow {
