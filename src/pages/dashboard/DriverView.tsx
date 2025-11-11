@@ -3,11 +3,14 @@ import Widget from '@/components/dashboard/Widget';
 import './DriverView.css';
 import { WidgetStatistic } from '@/components/dashboard/WidgetStatistic';
 import WidgetSpeedometer from '@/components/dashboard/WidgetSpeedometer';
-import { use } from 'react';
+import { use, useMemo } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Octagon, Play } from 'lucide-react';
 import { DriverContext } from '@/components/context/DriverContextProvider';
+import useQuery from '@/lib/utils/useQuery';
+import { MOTOR_STEPS, RACE_LENGTH_MILES, RACE_TIME_MILLIS, WHEEL_RADIUS_METERS } from '@/constants';
+import type { LocalTelemetryRow } from '@/lib/types/TelemetryRow';
 
 function DriverView() {
 	const driver = use(DriverContext);
@@ -40,11 +43,83 @@ function DriverView() {
 			});
 	}
 
+	const [carData, prevCarData, firstCarData] = useQuery(
+		async (db) => {
+			const tx = db.transaction('telemetry', 'readonly');
+
+			// Gets the most recent entry
+			let cursor = await tx.objectStore('telemetry').index('by-time').openCursor(null, 'prev');
+			const current = cursor?.value;
+			// Gets the 20th most recent entry
+			cursor = (await cursor?.advance(20)) ?? null;
+			const prev = cursor?.value;
+			// Gets the first entry after the trip started
+			let first: LocalTelemetryRow | undefined;
+			if (driver?.trip?.startedAt) {
+				cursor = await tx
+					.objectStore('telemetry')
+					.index('by-time')
+					.openCursor(IDBKeyRange.lowerBound(new Date(driver.trip.startedAt)), 'next');
+				first = cursor?.value;
+			} else {
+				first = undefined;
+			}
+
+			await tx.done;
+			return [current, prev, first];
+		},
+		[undefined, undefined, undefined]
+	);
+
+	const speedMPH = useMemo(() => {
+		if (!carData?.rpm) return undefined;
+		const d = carData.rpm * 2 * Math.PI * WHEEL_RADIUS_METERS; // Meters per minute
+		return d / 1609 / 60; // Convert to miles per hour
+	}, [carData]);
+
+	const timeRemaining = useMemo(() => {
+		if (!carData || !driver?.trip?.startedAt) return undefined;
+		// How long since the trip has started
+		const dt = new Date(carData.time).getTime() - new Date(driver.trip.startedAt).getTime();
+		return RACE_TIME_MILLIS - dt;
+	}, [carData, driver]);
+
+	const milesRemaining = useMemo(() => {
+		if (!carData?.tacho || !firstCarData?.tacho) return undefined;
+
+		const dRev = (carData.tacho - firstCarData.tacho) / MOTOR_STEPS; // Amount of wheel revolutions traveled
+		const dMiles = (dRev * 2 * Math.PI * WHEEL_RADIUS_METERS) / 1609; // Distance traveled miles
+
+		return RACE_LENGTH_MILES - dMiles;
+	}, [carData, firstCarData]);
+
+	const efficiency = useMemo(() => {
+		if (!carData?.wattHours || !prevCarData?.wattHours || !carData.tacho || !prevCarData.tacho) return;
+
+		const dRev = (carData.tacho - prevCarData.tacho) / MOTOR_STEPS; // Amount of wheel revolutions traveled
+		const dMiles = (dRev * 2 * Math.PI * WHEEL_RADIUS_METERS) / 1609; // Distance traveled miles
+
+		const dWH = (carData.wattHours - prevCarData.wattHours) / 1000; // KiloWatt hours used since last entry
+
+		return dMiles / dWH;
+	}, [carData, prevCarData]);
+
+	const avgEfficiency = useMemo(() => {
+		if (!carData?.wattHours || !firstCarData?.wattHours || !carData.tacho || !firstCarData.tacho) return;
+
+		const dRev = (carData.tacho - firstCarData.tacho) / MOTOR_STEPS; // Amount of wheel revolutions traveled
+		const dMiles = (dRev * 2 * Math.PI * WHEEL_RADIUS_METERS) / 1609; // Distance traveled miles
+
+		const dWH = (carData.wattHours - firstCarData.wattHours) / 1000; // KiloWatt hours used since last entry
+
+		return dMiles / dWH;
+	}, [carData, firstCarData]);
+
 	return (
 		<section id="driver-view" className="grid h-full w-full gap-2 p-2">
 			<Widget style={{ gridArea: 'a' }}>
 				<WidgetSpeedometer
-					value={23}
+					value={speedMPH ?? 0}
 					min={0}
 					max={50}
 					smallTickEvery={1}
@@ -52,15 +127,15 @@ function DriverView() {
 					className="text-green-500"
 					style={{ marginBottom: '-125px' }}
 				/>
-				<WidgetStatistic value={23.2} unit="mph" delta={0} size="2xl" />
+				<WidgetStatistic value={speedMPH} unit="mph" delta={0} size="2xl" />
 			</Widget>
 			<Widget style={{ gridArea: 'b' }}>
-				<WidgetStatistic value="15:34" unit="Time Remaining" delta={1} size="lg" className="[small]:mb-2" />
-				<WidgetStatistic value="4.6" unit="Miles Remaining" delta={1} size="lg" className="[small]:mb-2" />
+				<WidgetStatistic value={timeRemaining} unit="Time Remaining" delta={1} size="lg" className="[small]:mb-2" />
+				<WidgetStatistic value={milesRemaining} unit="Miles Remaining" delta={1} size="lg" className="[small]:mb-2" />
 			</Widget>
 			<Widget style={{ gridArea: 'c' }}>
 				<WidgetSpeedometer
-					value={2.35}
+					value={efficiency ?? 0}
 					min={0}
 					max={10}
 					smallTickEvery={1}
@@ -68,11 +143,11 @@ function DriverView() {
 					className="text-yellow-500"
 					style={{ marginBottom: '-125px' }}
 				/>
-				<WidgetStatistic value={2.35} unit="Mi/KWh" delta={2} size="2xl" />
+				<WidgetStatistic value={efficiency} unit="Mi/KWh" delta={2} size="2xl" />
 			</Widget>
 			<Widget style={{ gridArea: 'd' }}>
-				<WidgetStatistic value={2.42} unit="Average Mi/KWh" delta={2} size="xl" className="[small]:mb-2" />
-				<WidgetStatistic value={41.2} unit="Volts" delta={1} size="lg" />
+				<WidgetStatistic value={avgEfficiency} unit="Average Mi/KWh" delta={2} size="xl" className="[small]:mb-2" />
+				<WidgetStatistic value={carData?.volts ?? undefined} unit="Volts" delta={1} size="lg" />
 			</Widget>
 			<div style={{ gridArea: 'e' }} className="flex flex-col gap-2">
 				<Widget className="h-full">

@@ -25,7 +25,8 @@ export interface CarState {
 	 */
 	dutyCycle: number | null;
 	/**
-	 * The revolutions per minute of the car's **motor**.
+	 * The absolute total motor steps taken by the motor controller since last reset.
+	 * @see https://github.com/vedderb/bldc/blob/master/motor/mcpwm.c#L886
 	 */
 	tacho: number | null;
 	/**
