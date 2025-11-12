@@ -12,9 +12,11 @@ import useQuery from '@/lib/utils/useQuery';
 import { MOTOR_STEPS, RACE_LENGTH_MILES, RACE_TIME_MILLIS, WHEEL_RADIUS_METERS } from '@/constants';
 import type { LocalTelemetryRow } from '@/lib/types/TelemetryRow';
 import dayjs from '@/lib/utils/dayjs';
+import { SpectatorContext } from '@/components/context/SpectatorContextProvider';
 
 function DriverView() {
 	const driver = use(DriverContext);
+	const spectator = use(SpectatorContext);
 
 	function startTrip() {
 		if (!driver) return toast.error('Function not available');
@@ -44,23 +46,30 @@ function DriverView() {
 			});
 	}
 
+	const tripId = useMemo(() => driver?.trip?.id ?? spectator?.tripId, [driver, spectator]);
+
 	const [carData, prevCarData, firstCarData] = useQuery(
 		async (db) => {
-			const tx = db.transaction('telemetry', 'readonly');
+			if (!tripId) return [undefined, undefined, undefined];
+			const tx = db.transaction(['telemetry', 'trips'], 'readonly');
 
 			// Gets the most recent entry
-			let cursor = await tx.objectStore('telemetry').index('by-time').openCursor(null, 'prev');
+			let cursor = await tx
+				.objectStore('telemetry')
+				.index('by-tripId-time')
+				.openCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER]), 'prev');
 			const current = cursor?.value;
 			// Gets the 20th most recent entry
 			cursor = (await cursor?.advance(20)) ?? null;
 			const prev = cursor?.value;
 			// Gets the first entry after the trip started
+			const trip = await tx.objectStore('trips').index('by-id').get(tripId);
 			let first: LocalTelemetryRow | undefined;
-			if (driver?.trip?.startedAt) {
+			if (trip?.startedAt) {
 				cursor = await tx
 					.objectStore('telemetry')
-					.index('by-time')
-					.openCursor(IDBKeyRange.lowerBound(driver.trip.startedAt), 'next');
+					.index('by-tripId-time')
+					.openCursor(IDBKeyRange.bound([tripId, trip.startedAt], [tripId, Number.MAX_SAFE_INTEGER]), 'next');
 				first = cursor?.value;
 			} else {
 				first = undefined;

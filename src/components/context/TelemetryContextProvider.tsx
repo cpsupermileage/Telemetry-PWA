@@ -44,8 +44,6 @@ export interface TelemetrySchema extends DBSchema {
 		indexes: {
 			'by-id': number;
 			'by-createdAt': number;
-			'by-startedAt': number;
-			'by-endedAt': number;
 			'by-hasLocalChanges': number;
 		};
 	};
@@ -55,7 +53,7 @@ export interface TelemetrySchema extends DBSchema {
 		indexes: {
 			'by-id': number;
 			'by-tripId': number;
-			'by-time': number;
+			'by-tripId-time': [number, number];
 			'by-hasLocalChanges': number;
 		};
 	};
@@ -85,8 +83,6 @@ export default function TelemetryContextProvider({ children }: { children: React
 			});
 			trips.createIndex('by-id', 'id', { unique: true });
 			trips.createIndex('by-createdAt', 'createdAt', { unique: false });
-			trips.createIndex('by-startedAt', 'startedAt', { unique: false });
-			trips.createIndex('by-endedAt', 'endedAt', { unique: false });
 			trips.createIndex('by-hasLocalChanges', 'hasLocalChanges', { unique: false });
 
 			const telemetry = db.createObjectStore('telemetry', {
@@ -95,7 +91,7 @@ export default function TelemetryContextProvider({ children }: { children: React
 			});
 			telemetry.createIndex('by-id', 'id', { unique: true });
 			telemetry.createIndex('by-tripId', 'tripId', { unique: false });
-			telemetry.createIndex('by-time', 'time', { unique: false });
+			telemetry.createIndex('by-tripId-time', ['tripId', 'time'], { unique: false });
 			telemetry.createIndex('by-hasLocalChanges', 'hasLocalChanges', { unique: false });
 		},
 	});

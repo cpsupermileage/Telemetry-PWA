@@ -3,6 +3,7 @@ import Widget from '@/components/dashboard/Widget';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { LocalTripRow } from '@/lib/types/TripRow';
 import { TripType } from '@/lib/types/TripType';
 import useQuery from '@/lib/utils/useQuery';
 import { use, useMemo } from 'react';
@@ -11,7 +12,17 @@ function TripSelection() {
 	const spectator = use(SpectatorContext);
 
 	const trips = useQuery(async (db) => {
-		return (await db.getAll('trips')).sort((a, b) => b.createdAt - a.createdAt);
+		const tx = db.transaction('trips', 'readonly');
+
+		// Iterate through records by descending createdAt order
+		const trips: LocalTripRow[] = [];
+		let cursor = await tx.objectStore('trips').index('by-createdAt').openCursor(null, 'prev');
+		while (cursor != null) {
+			trips.push(cursor.value);
+			cursor = await cursor.continue();
+		}
+
+		return trips;
 	}, []);
 
 	const currentTripId = useMemo(() => {
