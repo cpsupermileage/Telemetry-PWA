@@ -40,7 +40,7 @@ function TripSelection() {
 	}
 
 	return (
-		<section className="flex h-full w-full p-2">
+		<section className="flex h-full w-full p-2 py-16 md:px-16 md:py-2 lg:px-2">
 			<Widget className="h-full w-full p-2 pt-0">
 				<ScrollArea type="auto" className="h-full w-full">
 					<Table>
