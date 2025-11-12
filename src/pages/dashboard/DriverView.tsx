@@ -140,7 +140,7 @@ function DriverView() {
 					className="text-green-500"
 					style={{ marginBottom: '-125px' }}
 				/>
-				<WidgetStatistic value={speedMPH} unit="mph" delta={0} size="2xl" />
+				<WidgetStatistic value={speedMPH} unit="MPH" delta={0} size="2xl" />
 			</Widget>
 			<Widget style={{ gridArea: 'b' }}>
 				<WidgetStatistic value={timeRemaining} unit="Time Remaining" delta={1} size="lg" className="[small]:mb-2" />
@@ -160,7 +160,7 @@ function DriverView() {
 			</Widget>
 			<Widget style={{ gridArea: 'd' }}>
 				<WidgetStatistic value={avgEfficiency} unit="Average Mi/KWh" delta={2} size="xl" className="[small]:mb-2" />
-				<WidgetStatistic value={carData?.volts ?? undefined} unit="Volts" delta={1} size="lg" />
+				<WidgetStatistic value={carData?.volts} unit="Volts" delta={1} size="lg" />
 			</Widget>
 			<div style={{ gridArea: 'e' }} className="flex flex-col gap-2">
 				<Widget className="h-full">
