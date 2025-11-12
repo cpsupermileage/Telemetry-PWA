@@ -6,7 +6,7 @@ import { MOTOR_STEPS, WHEEL_RADIUS_METERS } from '@/constants';
 import type { LocalTelemetryRow } from '@/lib/types/TelemetryRow';
 import useQuery from '@/lib/utils/useQuery';
 import { BatteryFull, Cog, Cpu, Disc2 } from 'lucide-react';
-import { use, useMemo } from 'react';
+import { use, useCallback, useMemo } from 'react';
 
 function EngineerView() {
 	const driver = use(DriverContext);
@@ -15,32 +15,35 @@ function EngineerView() {
 	const tripId = useMemo(() => driver?.trip?.id ?? spectator?.tripId, [driver, spectator]);
 
 	const [carData, firstCarData] = useQuery(
-		async (db) => {
-			if (!tripId) return [undefined, undefined];
-			const tx = db.transaction(['telemetry', 'trips'], 'readonly');
+		useCallback(
+			async (db) => {
+				if (!tripId) return [undefined, undefined];
+				const tx = db.transaction(['telemetry', 'trips'], 'readonly');
 
-			// Gets the most recent entry
-			let cursor = await tx
-				.objectStore('telemetry')
-				.index('by-tripId-time')
-				.openCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER]), 'prev');
-			const current = cursor?.value;
-			// Gets the first entry after the trip started
-			const trip = await tx.objectStore('trips').index('by-id').get(tripId);
-			let first: LocalTelemetryRow | undefined;
-			if (trip?.startedAt) {
-				cursor = await tx
+				// Gets the most recent entry
+				let cursor = await tx
 					.objectStore('telemetry')
 					.index('by-tripId-time')
-					.openCursor(IDBKeyRange.bound([tripId, trip.startedAt], [tripId, Number.MAX_SAFE_INTEGER]), 'next');
-				first = cursor?.value;
-			} else {
-				first = undefined;
-			}
+					.openCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER]), 'prev');
+				const current = cursor?.value;
+				// Gets the first entry after the trip started
+				const trip = await tx.objectStore('trips').index('by-id').get(tripId);
+				let first: LocalTelemetryRow | undefined;
+				if (trip?.startedAt) {
+					cursor = await tx
+						.objectStore('telemetry')
+						.index('by-tripId-time')
+						.openCursor(IDBKeyRange.bound([tripId, trip.startedAt], [tripId, Number.MAX_SAFE_INTEGER]), 'next');
+					first = cursor?.value;
+				} else {
+					first = undefined;
+				}
 
-			await tx.done;
-			return [current, first];
-		},
+				await tx.done;
+				return [current, first];
+			},
+			[tripId]
+		),
 		[undefined, undefined]
 	);
 

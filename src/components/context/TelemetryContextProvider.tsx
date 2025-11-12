@@ -97,10 +97,11 @@ export default function TelemetryContextProvider({ children }: { children: React
 	});
 
 	// Syncing the cloud changes from the server to local
+	const bigIntToNumber = (row: object) =>
+		Object.fromEntries(Object.entries(row).map(([k, v]) => [k, typeof v === 'bigint' ? Number(v) : v]));
+	const transformer = (row: object) => bigIntToNumber(camelCaseKeys(row));
 	useSyncShapeStreamToIndexedDB(
-		syncTrips
-			? { url: new URL('/api/trips', API_BASE).toString(), subscribe: true, transformer: camelCaseKeys }
-			: undefined,
+		syncTrips ? { url: new URL('/api/trips', API_BASE).toString(), subscribe: true, transformer } : undefined,
 		db,
 		'trips',
 		events
@@ -110,7 +111,7 @@ export default function TelemetryContextProvider({ children }: { children: React
 			? {
 					url: new URL('/api/telemetry/' + syncTelemetryTripId, API_BASE).toString(),
 					subscribe: true,
-					transformer: camelCaseKeys,
+					transformer,
 				}
 			: undefined,
 		db,

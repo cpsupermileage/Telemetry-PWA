@@ -1,7 +1,7 @@
 import { SpectatorContext } from '@/components/context/SpectatorContextProvider';
 import Widget from '@/components/dashboard/Widget';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { LocalTripRow } from '@/lib/types/TripRow';
 import { TripType } from '@/lib/types/TripType';
@@ -35,14 +35,18 @@ function TripSelection() {
 		)?.id;
 	}, [trips]);
 
+	function toggle(tripId: number) {
+		spectator?.setTripId(spectator.tripId != tripId ? tripId : undefined);
+	}
+
 	return (
 		<section className="flex h-full w-full p-2">
-			<Widget className="h-full w-full p-2">
-				<ScrollArea type="auto" className="h-full w-full min-w-2xl">
+			<Widget className="h-full w-full p-2 pt-0">
+				<ScrollArea type="auto" className="h-full w-full">
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>Name</TableHead>
+								<TableHead className="w-1/2 pl-10">Name</TableHead>
 								<TableHead>Type</TableHead>
 								<TableHead>Started At</TableHead>
 								<TableHead>Ended At</TableHead>
@@ -55,7 +59,7 @@ function TripSelection() {
 									data-state={spectator?.tripId == trip.id ? 'selected' : false}
 									role="button"
 									tabIndex={0}
-									onClick={() => spectator?.setTripId(trip.id)}
+									onClick={() => toggle(trip.id)}
 									className="cursor-pointer"
 								>
 									<TableCell>
@@ -83,6 +87,7 @@ function TripSelection() {
 							))}
 						</TableBody>
 					</Table>
+					<ScrollBar orientation="horizontal" />
 				</ScrollArea>
 			</Widget>
 		</section>

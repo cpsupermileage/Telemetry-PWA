@@ -3,7 +3,7 @@ import Widget from '@/components/dashboard/Widget';
 import './DriverView.css';
 import { WidgetStatistic } from '@/components/dashboard/WidgetStatistic';
 import WidgetSpeedometer from '@/components/dashboard/WidgetSpeedometer';
-import { use, useMemo } from 'react';
+import { use, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Octagon, Play } from 'lucide-react';
@@ -49,35 +49,38 @@ function DriverView() {
 	const tripId = useMemo(() => driver?.trip?.id ?? spectator?.tripId, [driver, spectator]);
 
 	const [carData, prevCarData, firstCarData] = useQuery(
-		async (db) => {
-			if (!tripId) return [undefined, undefined, undefined];
-			const tx = db.transaction(['telemetry', 'trips'], 'readonly');
+		useCallback(
+			async (db) => {
+				if (!tripId) return [undefined, undefined, undefined];
+				const tx = db.transaction(['telemetry', 'trips'], 'readonly');
 
-			// Gets the most recent entry
-			let cursor = await tx
-				.objectStore('telemetry')
-				.index('by-tripId-time')
-				.openCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER]), 'prev');
-			const current = cursor?.value;
-			// Gets the 20th most recent entry
-			cursor = (await cursor?.advance(20)) ?? null;
-			const prev = cursor?.value;
-			// Gets the first entry after the trip started
-			const trip = await tx.objectStore('trips').index('by-id').get(tripId);
-			let first: LocalTelemetryRow | undefined;
-			if (trip?.startedAt) {
-				cursor = await tx
+				// Gets the most recent entry
+				let cursor = await tx
 					.objectStore('telemetry')
 					.index('by-tripId-time')
-					.openCursor(IDBKeyRange.bound([tripId, trip.startedAt], [tripId, Number.MAX_SAFE_INTEGER]), 'next');
-				first = cursor?.value;
-			} else {
-				first = undefined;
-			}
+					.openCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER]), 'prev');
+				const current = cursor?.value;
+				// Gets the 20th most recent entry
+				cursor = (await cursor?.advance(20)) ?? null;
+				const prev = cursor?.value;
+				// Gets the first entry after the trip started
+				const trip = await tx.objectStore('trips').index('by-id').get(tripId);
+				let first: LocalTelemetryRow | undefined;
+				if (trip?.startedAt) {
+					cursor = await tx
+						.objectStore('telemetry')
+						.index('by-tripId-time')
+						.openCursor(IDBKeyRange.bound([tripId, trip.startedAt], [tripId, Number.MAX_SAFE_INTEGER]), 'next');
+					first = cursor?.value;
+				} else {
+					first = undefined;
+				}
 
-			await tx.done;
-			return [current, prev, first];
-		},
+				await tx.done;
+				return [current, prev, first];
+			},
+			[tripId]
+		),
 		[undefined, undefined, undefined]
 	);
 
