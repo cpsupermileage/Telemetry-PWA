@@ -73,7 +73,7 @@ function TripSelection() {
 										{trip.type === TripType.CALIBRATION && (
 											<Badge className="bg-yellow-500 text-white dark:bg-yellow-600">Calibration</Badge>
 										)}
-										{trip.type === TripType.TESTING && (
+										{trip.type === TripType.FULL_RUN && (
 											<Badge className="bg-green-500 text-white dark:bg-green-600">Full Run</Badge>
 										)}
 									</TableCell>
