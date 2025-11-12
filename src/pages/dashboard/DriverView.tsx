@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Octagon, Play } from 'lucide-react';
 import { DriverContext } from '@/components/context/DriverContextProvider';
-import useQuery from '@/lib/utils/useQuery';
+import useQuery from '@/lib/hooks/useQuery';
 import { MOTOR_STEPS, RACE_LENGTH_MILES, RACE_TIME_MILLIS, WHEEL_RADIUS_METERS } from '@/constants';
 import type { LocalTelemetryRow } from '@/lib/types/TelemetryRow';
 import dayjs from '@/lib/utils/dayjs';

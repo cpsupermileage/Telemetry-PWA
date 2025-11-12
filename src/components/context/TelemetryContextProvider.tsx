@@ -3,9 +3,9 @@ import type { LocalTripRow } from '@/lib/types/TripRow';
 import { type DBSchema, type IDBPDatabase } from 'idb';
 import { createContext, useEffect, useState } from 'react';
 import EventEmitter from 'eventemitter3';
-import useIndexedDB from '@/lib/utils/useIndexedDB';
-import useSyncIndexedDBToCloud from '@/lib/utils/useSyncIndexedDBToCloud';
-import useSyncShapeStreamToIndexedDB from '@/lib/utils/useSyncShapeStreamToIndexedDB';
+import useIndexedDB from '@/lib/hooks/useIndexedDB';
+import useSyncIndexedDBToCloud from '@/lib/hooks/useSyncIndexedDBToCloud';
+import useSyncShapeStreamToIndexedDB from '@/lib/hooks/useSyncShapeStreamToIndexedDB';
 import { camelCaseKeys } from '@/lib/utils/camelCase';
 
 /**

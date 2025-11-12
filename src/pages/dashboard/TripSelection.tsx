@@ -5,7 +5,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { LocalTripRow } from '@/lib/types/TripRow';
 import { TripType } from '@/lib/types/TripType';
-import useQuery from '@/lib/utils/useQuery';
+import useQuery from '@/lib/hooks/useQuery';
 import { use, useMemo } from 'react';
 
 function TripSelection() {

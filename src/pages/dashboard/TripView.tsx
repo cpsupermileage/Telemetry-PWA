@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { TripType } from '@/lib/types/TripType';
-import useLocalStorageState from '@/lib/utils/useLocalStorageState';
+import useLocalStorageState from '@/lib/hooks/useLocalStorageState';
 import { use, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 

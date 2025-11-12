@@ -1,6 +1,6 @@
 import { type IDBPDatabase, type StoreNames } from 'idb';
 import { useCallback } from 'react';
-import apiRequest from './apiClient';
+import apiRequest from '../utils/apiClient';
 import type { TelemetrySchema } from '@/components/context/TelemetryContextProvider';
 
 export default function useSyncIndexedDBToCloud(
