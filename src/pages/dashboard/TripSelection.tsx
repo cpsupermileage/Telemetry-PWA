@@ -69,17 +69,13 @@ function TripSelection() {
 										)}
 									</TableCell>
 									<TableCell>
-										{
-											{
-												[TripType.TESTING]: <Badge variant="secondary">Testing</Badge>,
-												[TripType.CALIBRATION]: (
-													<Badge className="bg-yellow-500 text-white dark:bg-yellow-600">Calibration</Badge>
-												),
-												[TripType.FULL_RUN]: (
-													<Badge className="bg-green-500 text-white dark:bg-green-600">Full Run</Badge>
-												),
-											}[trip.type]
-										}
+										{trip.type === TripType.TESTING && <Badge variant="secondary">Testing</Badge>}
+										{trip.type === TripType.CALIBRATION && (
+											<Badge className="bg-yellow-500 text-white dark:bg-yellow-600">Calibration</Badge>
+										)}
+										{trip.type === TripType.TESTING && (
+											<Badge className="bg-green-500 text-white dark:bg-green-600">Full Run</Badge>
+										)}
 									</TableCell>
 									<TableCell>{trip.startedAt ? new Date(trip.startedAt).toLocaleString() : ''}</TableCell>
 									<TableCell>{trip.endedAt ? new Date(trip.endedAt).toLocaleString() : ''}</TableCell>
