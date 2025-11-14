@@ -82,6 +82,8 @@ export default function BluetoothContextProvider({ children }: { children: React
 	const status = useRef<BluetoothStatus>('disconnected');
 	const events = useRef(new EventEmitter<BluetoothEventMap>());
 
+	const reconnectAttempts = useRef<number>(0);
+
 	const savedDevice = useRef<BluetoothDevice | undefined>(undefined);
 	const server = useRef<BluetoothRemoteGATTServer | undefined>(undefined);
 
@@ -107,11 +109,14 @@ export default function BluetoothContextProvider({ children }: { children: React
 			await connectToDevice();
 
 			savedDevice.current.addEventListener('gattserverdisconnected', () => {
-				console.log('GATT server disconnected');
-				// Don't set device to null here, as we want to keep the device object around for reconnecting
+				console.error('GATT server disconnected');
+				// Don't set savedDevice to null here, as we want to keep the device object around for reconnecting
 				server.current = undefined;
 				characteristics.current = undefined;
 				events.current.emit('status', 'disconnected');
+				// Try reconnecting, unless savedDevice was set to undefined elsewhere like an intentional disconnection
+				reconnectAttempts.current = 10;
+				attemptReconnect();
 			});
 		})();
 	}
@@ -134,10 +139,11 @@ export default function BluetoothContextProvider({ children }: { children: React
 
 			try {
 				await getCharacteristics();
-				console.log('Connected to radio');
+				console.log('Subscribed to all characteristics');
 				events.current.emit('status', 'connected');
 			} catch (e) {
 				savedDevice.current = undefined; // Clear device so we can't reconnect to it, as it doesn't have the correct characteristics
+				reconnectAttempts.current = 0;
 				throw e; // Continue the error stack
 			}
 		} catch (e) {
@@ -145,6 +151,9 @@ export default function BluetoothContextProvider({ children }: { children: React
 			server.current = undefined;
 			characteristics.current = undefined;
 			events.current.emit('status', 'disconnected');
+			// Attempt reconnect in separate promise
+			attemptReconnect();
+			// Throw error
 			throw e;
 		}
 	}
@@ -181,10 +190,21 @@ export default function BluetoothContextProvider({ children }: { children: React
 		);
 	}
 
+	function attemptReconnect() {
+		// Attempt a reconnect in another promise, separate from this one
+		if (reconnectAttempts.current > 0) {
+			if (savedDevice.current == undefined) return (reconnectAttempts.current = 0);
+			reconnectAttempts.current--;
+			console.log('Attempting to reconnect... attempts left: ' + reconnectAttempts.current);
+			connectToDevice().catch(console.error);
+		}
+	}
+
 	// Disconnects from the GATT server and forgets the device
 	function disconnect() {
 		if (server.current) {
 			savedDevice.current = undefined;
+			reconnectAttempts.current = 0;
 			server.current.disconnect(); // Will trigger the gattserverdisconnected event, which will clear the other variables
 		}
 	}
