@@ -54,7 +54,7 @@ export default function DriverContextProvider({ children }: { children: React.Re
 	// Function for taking the cached data and putting it in the db
 	const postTelemetry = useCallback(async () => {
 		if (!db) return console.error('Attempted to push telemetry to db, but db is undefined');
-		if (!trip) return console.error('Attempted to push telemetry to db, but trip is undefined');
+		if (!trip) return;
 		if (!cache.current && !geoCache.current) return; // If there is no new data, ignore
 
 		await db.put('telemetry', {
@@ -74,7 +74,7 @@ export default function DriverContextProvider({ children }: { children: React.Re
 				wattHours: null,
 				error: null,
 				// Inject cache
-				...cache,
+				...cache.current,
 			},
 			lat: geoCache.current?.coords.latitude ?? null,
 			long: geoCache.current?.coords.longitude ?? null,

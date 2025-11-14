@@ -3,6 +3,7 @@ import { BluetoothContext, type BluetoothStatus } from '../context/BluetoothCont
 import Widget from './Widget';
 import { BluetoothConnected, BluetoothOff, BluetoothSearching } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
+import { toast } from 'sonner';
 
 function BluetoothControl() {
 	const ble = use(BluetoothContext);
@@ -19,8 +20,13 @@ function BluetoothControl() {
 	}, [ble]);
 
 	function onClick() {
+		if (!ble) throw new Error('BluetoothContext is undefined');
 		if (!('bluetooth' in navigator)) return alert('Web Bluetooth not supported, try using a different browser');
-		if (status === 'disconnected') void ble?.connect();
+		if (status === 'disconnected')
+			ble.connect().catch((err) => {
+				if (err instanceof Error && err.message.startsWith('User')) return; // User cancelled, don't notify
+				toast.error('Failed to connect: ' + err);
+			});
 		else setOpen(true);
 	}
 

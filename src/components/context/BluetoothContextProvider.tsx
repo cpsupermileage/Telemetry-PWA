@@ -1,35 +1,35 @@
 import cachedAsyncFunction from '@/lib/utils/cachedAsyncFunction';
-import { createContext, useEffect, useRef, type ReactElement } from 'react';
+import { createContext, useEffect, useRef } from 'react';
 import EventEmitter from 'eventemitter3';
 import type { CarState } from '../../lib/types/CarState';
 
 // Bluetooth Config
 const SERVICE_UUID = '8e1dfb38-f3a5-4b3f-8f99-a30c0f61fc4e';
-const CHARACTERISTIC_UUIDS: Record<CharacteristicKeys, string> = {
+const CHARACTERISTIC_UUIDS: Record<CharacteristicKeys, BluetoothCharacteristicUUID> = {
 	// Some characteristic types have assigned numbers in the BLE spec, see here:
 	// https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/Assigned_Numbers/out/en/Assigned_Numbers.pdf
-	tempMosfet: '0x2A1E', // Intermediate Temperature (the name in the BLE spec)
-	tempMotor: '0x2A1C', // Temperature Measurement
-	motorCurrent: '0x2AEE', // Electric Current
-	inputCurrent: '0x2AE0', // Average Current
-	dutyCycle: '0x2C10', // Work Cycle Data
-	tacho: '0x2C09', // Rotational Speed
-	rpm: '0x2A67', // Location and Speed
-	volts: '0x2B18', // Voltage
-	wattHours: '0x2AF2', // Energy
-	error: '0x2BBB', // Status flags
+	tempMosfet: 0x2a1e, // Intermediate Temperature (the name in the BLE spec)
+	tempMotor: 0x2a1c, // Temperature Measurement
+	motorCurrent: 0x2aee, // Electric Current
+	inputCurrent: 0x2ae0, // Average Current
+	dutyCycle: 0x2c10, // Work Cycle Data
+	tacho: 0x2c09, // Rotational Speed
+	rpm: 0x2a67, // Location and Speed
+	volts: 0x2b18, // Voltage
+	wattHours: 0x2af2, // Energy
+	error: 0x2bbb, // Status flags
 };
 
 const CHARACTERISTIC_DECODE_FUNCTIONS: Record<CharacteristicKeys, (data: DataView) => number> = {
-	tempMosfet: (data) => data.getFloat32(0),
-	tempMotor: (data) => data.getFloat32(0),
-	motorCurrent: (data) => data.getFloat32(0),
-	inputCurrent: (data) => data.getFloat32(0),
-	dutyCycle: (data) => data.getFloat32(0),
-	tacho: (data) => data.getFloat32(0),
-	rpm: (data) => data.getFloat32(0),
-	volts: (data) => data.getFloat32(0),
-	wattHours: (data) => data.getFloat32(0),
+	tempMosfet: (data) => data.getFloat32(0, true),
+	tempMotor: (data) => data.getFloat32(0, true),
+	motorCurrent: (data) => data.getFloat32(0, true),
+	inputCurrent: (data) => data.getFloat32(0, true),
+	dutyCycle: (data) => data.getFloat32(0, true),
+	tacho: (data) => data.getFloat32(0, true),
+	rpm: (data) => data.getFloat32(0, true),
+	volts: (data) => data.getFloat32(0, true),
+	wattHours: (data) => data.getFloat32(0, true),
 	error: (data) => data.getUint8(0),
 };
 
@@ -78,7 +78,7 @@ export const BluetoothContext = createContext<BluetoothContextType | undefined>(
  * A wrapper for providing the BluetoothContext values to its children.
  * Manages the bluetooth connection and provides updates via the returned EventEmitter and functions
  */
-export default function BluetoothContextProvider({ children }: { children: ReactElement }) {
+export default function BluetoothContextProvider({ children }: { children: React.ReactNode }) {
 	const status = useRef<BluetoothStatus>('disconnected');
 	const events = useRef(new EventEmitter<BluetoothEventMap>());
 
@@ -99,7 +99,7 @@ export default function BluetoothContextProvider({ children }: { children: React
 			disconnect();
 
 			savedDevice.current = await navigator.bluetooth.requestDevice({
-				filters: [{ namePrefix: 'CLAW' }],
+				filters: [{ services: [SERVICE_UUID] }],
 				optionalServices: [SERVICE_UUID],
 				// acceptAllDevices: true,
 			});
