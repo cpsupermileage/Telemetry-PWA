@@ -1,17 +1,10 @@
-import { APIProvider, Map, type MapCameraChangedEvent, type MapCameraProps } from '@vis.gl/react-google-maps';
+import { type MapCameraProps } from '@vis.gl/react-google-maps';
 import { use, useEffect, useState } from 'react';
 import { Alert, AlertTitle } from '../ui/alert';
 import { AlertCircleIcon, MapPinned } from 'lucide-react';
 import { Button } from '../ui/button';
 import { DriverContext } from '../context/DriverContextProvider';
-
-const GOOGLE_MAPS_API_KEY = import.meta.env.PUBLIC_GOOGLE_MAPS_API_KEY as string | undefined;
-
-const INITIAL_CAMERA = {
-	center: { lat: 35.3031, lng: -120.661 },
-	zoom: 18,
-	tilt: 45,
-};
+import ControlledGoogleMaps from './ControlledGoogleMaps';
 
 function GoogleMaps() {
 	const driver = use(DriverContext);
@@ -47,25 +40,20 @@ function GoogleMaps() {
 		);
 	}
 
-	const [cameraProps, setCameraProps] = useState<MapCameraProps>(INITIAL_CAMERA);
-
-	function handleCameraChange(ev: MapCameraChangedEvent) {
-		setCameraProps(ev.detail);
-	}
+	const [cameraProps, setCameraProps] = useState<Partial<MapCameraProps>>({});
 
 	useEffect(() => {
 		if (permissionState !== 'granted') return;
 
 		const watchId = navigator.geolocation.watchPosition(
 			(pos) => {
-				setCameraProps((prev) => ({
-					...prev,
+				setCameraProps({
 					center: {
 						lat: pos.coords.latitude,
 						lng: pos.coords.longitude,
 					},
 					heading: pos.coords.heading ?? undefined,
-				}));
+				});
 				driver?.setGeolocation?.(pos);
 			},
 			(err) => {
@@ -79,37 +67,20 @@ function GoogleMaps() {
 				maximumAge: 0,
 			}
 		);
+		console.log('Subscribed to geolocation', watchId);
 
-		return navigator.geolocation.clearWatch(watchId);
+		return () => navigator.geolocation.clearWatch(watchId);
 	}, [permissionState, driver]);
 
-	return GOOGLE_MAPS_API_KEY && permissionState === 'granted' ? (
-		<APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
-			<Map
-				style={{ width: '100%', height: '100%' }}
-				zoomControl
-				{...cameraProps}
-				onCameraChanged={handleCameraChange}
-				minZoom={16}
-				gestureHandling=""
-				disableDefaultUI
-				mapTypeId="satellite"
-			/>
-		</APIProvider>
-	) : !GOOGLE_MAPS_API_KEY ? (
-		<Alert variant="destructive" className="m-8">
-			<AlertCircleIcon />
-			<AlertTitle>
-				Please define <code>GOOGLE_MAPS_API_KEY</code>
-			</AlertTitle>
-		</Alert>
+	return permissionState === 'granted' ? (
+		<ControlledGoogleMaps {...cameraProps} />
 	) : permissionState === 'prompt' ? (
-		<Button onClick={promptForLocation} className="m-8">
+		<Button onClick={promptForLocation} className="m-8 w-fit">
 			<MapPinned />
 			Enable Map
 		</Button>
 	) : (
-		<Alert variant="destructive" className="m-8">
+		<Alert variant="destructive" className="m-8 w-fit">
 			<AlertCircleIcon />
 			<AlertTitle>
 				Please enable the <code>location</code> permission

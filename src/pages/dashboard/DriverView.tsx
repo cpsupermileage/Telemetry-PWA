@@ -13,6 +13,8 @@ import { MOTOR_STEPS, RACE_LENGTH_MILES, RACE_TIME_MILLIS, WHEEL_RADIUS_METERS }
 import type { LocalTelemetryRow } from '@/lib/types/TelemetryRow';
 import dayjs from '@/lib/utils/dayjs';
 import { SpectatorContext } from '@/components/context/SpectatorContextProvider';
+import ControlledGoogleMaps from '@/components/dashboard/ControlledGoogleMaps';
+import type { MapCameraProps } from '@vis.gl/react-google-maps';
 
 function DriverView() {
 	const driver = use(DriverContext);
@@ -131,6 +133,21 @@ function DriverView() {
 		return dMiles / dWH;
 	}, [carData, firstCarData]);
 
+	const cameraProps = useMemo<Partial<MapCameraProps> | undefined>(() => {
+		if (!spectator) return;
+		if (!carData?.lat || !carData.long) return;
+
+		return {
+			center: {
+				lat: carData.lat,
+				lng: carData.long,
+			},
+			heading: carData.heading ?? undefined,
+		};
+	}, [spectator, carData]);
+
+	console.log(carData, cameraProps);
+
 	return (
 		<section id="driver-view" className="grid h-full w-full gap-2 p-2">
 			<Widget style={{ gridArea: 'a' }}>
@@ -166,8 +183,13 @@ function DriverView() {
 				<WidgetStatistic value={carData?.volts} unit="Volts" delta={1} size="lg" />
 			</Widget>
 			<div style={{ gridArea: 'e' }} className="flex flex-col gap-2">
-				<Widget className="h-full">
-					<GoogleMaps />
+				<Widget className="h-full w-full">
+					{driver ? (
+						// This one gets the location from the device position instead, and reports back to DriverContext
+						<GoogleMaps />
+					) : (
+						<ControlledGoogleMaps defaultZoom={18} defaultTilt={45} {...cameraProps} />
+					)}
 				</Widget>
 				{driver && (
 					<Widget className="p-4">

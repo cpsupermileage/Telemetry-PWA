@@ -78,12 +78,13 @@ export default function DriverContextProvider({ children }: { children: React.Re
 			},
 			lat: geoCache.current?.coords.latitude ?? null,
 			long: geoCache.current?.coords.longitude ?? null,
+			heading: geoCache.current?.coords.heading ?? null,
 			hasLocalChanges: 1,
 		});
 
 		// Clear caches immediately after we push to db
 		cache.current = {};
-		geoCache.current = undefined;
+		//geoCache.current = undefined; // Don't clear geocache bc its update rate is slow
 		// Notify of db update
 		events.emit('update');
 	}, [db, events, trip]);

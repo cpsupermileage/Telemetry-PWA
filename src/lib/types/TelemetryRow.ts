@@ -13,6 +13,7 @@ export interface TelemetryRow extends Row, CarState {
 	// phone values
 	lat: number | null;
 	long: number | null;
+	heading: number | null;
 }
 
 export interface LocalTelemetryRow extends TelemetryRow {
