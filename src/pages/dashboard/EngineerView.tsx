@@ -24,7 +24,7 @@ function EngineerView() {
 				let cursor = await tx
 					.objectStore('telemetry')
 					.index('by-tripId-time')
-					.openCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER]), 'prev');
+					.openCursor(IDBKeyRange.bound([tripId, 0], [tripId, spectator?.time ?? Number.MAX_SAFE_INTEGER]), 'prev');
 				const current = cursor?.value;
 				// Gets the first entry after the trip started
 				const trip = await tx.objectStore('trips').index('by-id').get(tripId);
@@ -33,7 +33,10 @@ function EngineerView() {
 					cursor = await tx
 						.objectStore('telemetry')
 						.index('by-tripId-time')
-						.openCursor(IDBKeyRange.bound([tripId, trip.startedAt], [tripId, Number.MAX_SAFE_INTEGER]), 'next');
+						.openCursor(
+							IDBKeyRange.bound([tripId, trip.startedAt], [tripId, spectator?.time ?? Number.MAX_SAFE_INTEGER]),
+							'next'
+						);
 					first = cursor?.value;
 				} else {
 					first = undefined;
@@ -42,7 +45,7 @@ function EngineerView() {
 				await tx.done;
 				return [current, first];
 			},
-			[tripId]
+			[tripId, spectator]
 		),
 		[undefined, undefined]
 	);

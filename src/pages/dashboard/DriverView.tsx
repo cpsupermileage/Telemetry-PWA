@@ -60,7 +60,7 @@ function DriverView() {
 				let cursor = await tx
 					.objectStore('telemetry')
 					.index('by-tripId-time')
-					.openCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER]), 'prev');
+					.openCursor(IDBKeyRange.bound([tripId, 0], [tripId, spectator?.time ?? Number.MAX_SAFE_INTEGER]), 'prev');
 				const current = cursor?.value;
 				// Gets the 20th most recent entry
 				cursor = (await cursor?.advance(20)) ?? null;
@@ -72,7 +72,10 @@ function DriverView() {
 					cursor = await tx
 						.objectStore('telemetry')
 						.index('by-tripId-time')
-						.openCursor(IDBKeyRange.bound([tripId, trip.startedAt], [tripId, Number.MAX_SAFE_INTEGER]), 'next');
+						.openCursor(
+							IDBKeyRange.bound([tripId, trip.startedAt], [tripId, spectator?.time ?? Number.MAX_SAFE_INTEGER]),
+							'next'
+						);
 					first = cursor?.value;
 				} else {
 					first = undefined;
@@ -81,7 +84,7 @@ function DriverView() {
 				await tx.done;
 				return [current, prev, first];
 			},
-			[tripId]
+			[tripId, spectator]
 		),
 		[undefined, undefined, undefined]
 	);

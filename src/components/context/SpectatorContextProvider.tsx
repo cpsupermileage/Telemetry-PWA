@@ -1,4 +1,4 @@
-import { createContext, use, useState } from 'react';
+import { createContext, use, useEffect, useState } from 'react';
 import { TelemetryContext } from './TelemetryContextProvider';
 
 /**
@@ -7,26 +7,90 @@ import { TelemetryContext } from './TelemetryContextProvider';
 export interface SpectatorContextType {
 	tripId: number | undefined;
 	setTripId: (tripId: number | undefined) => void;
+	/**
+	 * During playback, this is the current time of the trip we are viewing up to, or undefined if its the live feed
+	 */
+	time: number | undefined;
+	setTime: React.Dispatch<React.SetStateAction<number | undefined>>;
+	/**
+	 * Wether or not the time should increase automatically.
+	 */
+	paused: boolean;
+	setPaused: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 /**
  * A wrapper for providing the SpectatorTelemetryContext values to its children.
  */
 export default function SpectatorTelemetryContextProvider({ children }: { children: React.ReactNode }) {
-	const { setSyncTelemetryTripId } = use(TelemetryContext);
+	const { db, setSyncTelemetryTripId } = use(TelemetryContext);
 
 	const [tripId, _setTripId] = useState<number | undefined>(undefined);
+	const [time, setTime] = useState<number | undefined>(undefined);
+	const [paused, setPaused] = useState<boolean>(false);
 
 	function setTripId(tripId: number | undefined) {
 		_setTripId(tripId);
+		setTime(undefined);
+		setPaused(false);
 		// Also made sure we start downloading the associated telemetry entries
 		setSyncTelemetryTripId(tripId);
 	}
+
+	// During playback and not paused, move forward to the next entry automatically
+	useEffect(() => {
+		if (!db || !tripId || time === undefined || paused) return;
+		const start = Date.now();
+		let timeout: number | undefined | null = undefined;
+
+		// Fetch the next entry in the db and delay using setTimeout to set the current one to that one
+		void (async () => {
+			const tx = db.transaction('telemetry', 'readonly');
+			const cursor = await tx
+				.objectStore('telemetry')
+				.index('by-tripId-time')
+				.openKeyCursor(IDBKeyRange.bound([tripId, time], [tripId, Number.MAX_SAFE_INTEGER], true));
+			if (!cursor) return;
+			const [, nextEntryTime] = cursor.key;
+			await tx.done;
+			const timeToNext = nextEntryTime - time - (Date.now() - start); // subtract the time it took to call the db
+			if (timeout === null) return; // If the component has already been dismounted
+			timeout = setTimeout(() => {
+				setTime(nextEntryTime);
+			}, timeToNext);
+		})();
+
+		return () => {
+			if (timeout) clearTimeout(timeout);
+			else timeout = null; // Signal that the timeout can no longer be set
+		};
+	}, [db, tripId, time, paused]);
+
+	useEffect(() => {
+		if (!db || !tripId || time !== undefined || !paused) return;
+		// If paused and time is not set, set it to the latest entry time
+		void (async () => {
+			if (!db) return;
+			const tx = db.transaction('telemetry', 'readonly');
+			const cursor = await tx
+				.objectStore('telemetry')
+				.index('by-tripId-time')
+				.openKeyCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER], true), 'prev');
+			if (!cursor) return;
+			const [, time] = cursor.key;
+			await tx.done;
+			setTime(time);
+		})();
+	}, [db, tripId, time, paused]);
 
 	// Returning the value
 	const value = {
 		tripId,
 		setTripId,
+		time,
+		setTime,
+		paused,
+		setPaused,
 	} satisfies SpectatorContextType;
 
 	return <SpectatorContext value={value}>{children}</SpectatorContext>;
