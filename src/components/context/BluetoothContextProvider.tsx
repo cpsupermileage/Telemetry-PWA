@@ -26,7 +26,7 @@ const CHARACTERISTIC_DECODE_FUNCTIONS: Record<CharacteristicKeys, (data: DataVie
 	motorCurrent: (data) => data.getFloat32(0, true),
 	inputCurrent: (data) => data.getFloat32(0, true),
 	dutyCycle: (data) => data.getFloat32(0, true),
-	tacho: (data) => data.getFloat32(0, true),
+	tacho: (data) => data.getUint32(0, true),
 	rpm: (data) => data.getFloat32(0, true),
 	volts: (data) => data.getFloat32(0, true),
 	wattHours: (data) => data.getFloat32(0, true),
