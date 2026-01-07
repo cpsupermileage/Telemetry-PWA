@@ -6,7 +6,7 @@ import WidgetSpeedometer from '@/components/dashboard/WidgetSpeedometer';
 import { use, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Octagon, Play } from 'lucide-react';
+import { AlertCircleIcon, Octagon, Play } from 'lucide-react';
 import { DriverContext } from '@/components/context/DriverContextProvider';
 import useQuery from '@/lib/hooks/useQuery';
 import { MOTOR_STEPS, RACE_LENGTH_MILES, RACE_TIME_MILLIS, WHEEL_RADIUS_METERS } from '@/constants';
@@ -15,6 +15,7 @@ import dayjs from '@/lib/utils/dayjs';
 import { SpectatorContext } from '@/components/context/SpectatorContextProvider';
 import ControlledGoogleMaps from '@/components/dashboard/ControlledGoogleMaps';
 import type { MapCameraProps } from '@vis.gl/react-google-maps';
+import { MC_FAULT_CODE } from '@/lib/types/CarState';
 
 function DriverView() {
 	const driver = use(DriverContext);
@@ -149,10 +150,8 @@ function DriverView() {
 		};
 	}, [spectator, carData]);
 
-	console.log(carData, cameraProps);
-
 	return (
-		<section id="driver-view" className="grid h-full w-full gap-2 p-2">
+		<section id="driver-view" className="relative grid h-full w-full gap-2 p-2">
 			<Widget style={{ gridArea: 'a' }}>
 				<WidgetSpeedometer
 					value={speedMPH ?? 0}
@@ -185,7 +184,7 @@ function DriverView() {
 				<WidgetStatistic value={avgEfficiency} unit="Average Mi/KWh" delta={2} size="xl" className="[small]:mb-2" />
 				<WidgetStatistic value={carData?.volts} unit="Volts" delta={1} size="lg" />
 			</Widget>
-			<div style={{ gridArea: 'e' }} className="flex flex-col gap-2">
+			<div style={{ gridArea: 'e' }} className="relative flex flex-col gap-2">
 				<Widget className="h-full w-full">
 					{driver ? (
 						// This one gets the location from the device position instead, and reports back to DriverContext
@@ -213,6 +212,19 @@ function DriverView() {
 							</div>
 						)}
 					</Widget>
+				)}
+				{carData?.error && (
+					<div className="absolute top-0 w-full">
+						<div className="bg-destructive text-primary-foreground flex w-full justify-center gap-2 rounded-lg px-4 py-2 text-sm">
+							<AlertCircleIcon className="size-5" />
+							<span>
+								Motor Controller Fault:{' '}
+								<code>
+									<b>{MC_FAULT_CODE[carData.error] || 'UNKNOWN'}</b>
+								</code>
+							</span>
+						</div>
+					</div>
 				)}
 			</div>
 		</section>
