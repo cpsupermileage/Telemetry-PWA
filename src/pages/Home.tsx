@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
+import TripSelection from '@/components/dashboard/TripSelection';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
 	Dialog,
@@ -11,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import type { BeforeInstallPromptEvent } from '@/lib/types/BeforeInstallPromptEvent';
-import { ChartSpline, Car, Download, Share, MonitorDown } from 'lucide-react';
+import { Car, Download, Share, MonitorDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
@@ -53,25 +54,19 @@ function App() {
 
 	return (
 		<main className="relative mx-auto flex min-h-screen w-full flex-col items-center p-4">
-			<div className="flex w-full max-w-sm flex-col items-center justify-center gap-8 sm:max-w-full sm:flex-row">
+			<section className="flex w-full max-w-sm flex-col items-center justify-center gap-8 sm:max-w-full sm:flex-row">
 				<img alt="Logo with the text SMV above a car" src="/pwa-512x512.png" className="max-w-48" />
 
 				<div className="bg-border h-px w-full shrink-0 sm:h-full sm:w-px" />
 
 				<div className="flex flex-col items-center gap-4">
 					<Button variant="default" asChild>
-						<Link to="/driver/dashboard">
+						<Link to="/driver">
 							<Car /> Driver Dashboard
-						</Link>
-					</Button>
-					<Button variant="secondary" asChild>
-						<Link to="/spectator/dashboard">
-							<ChartSpline /> Spectator Dashboard
 						</Link>
 					</Button>
 					{!installed && (
 						<>
-							<Separator />
 							<Button variant="outline" onClick={tryInstall}>
 								<Download /> Install as App
 							</Button>
@@ -114,7 +109,13 @@ function App() {
 						</DialogContent>
 					</Dialog>
 				</div>
-			</div>
+			</section>
+
+			<section className="w-full max-w-4xl">
+				<Separator />
+				<h4 className="mt-4 mb-4 w-full text-center">OR select a trip to spectate:</h4>
+				<TripSelection />
+			</section>
 
 			<footer className="text-muted-foreground mt-auto text-center">
 				<p className="mb-2 text-sm">Web App developed by the CalPoly Supermileage Team for the Shell Eco Marathon.</p>

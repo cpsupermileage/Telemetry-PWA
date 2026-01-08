@@ -1,12 +1,13 @@
 import { createContext, use, useEffect, useState } from 'react';
-import { TelemetryContext } from './TelemetryContextProvider';
+import { API_BASE, TelemetryContext } from './TelemetryContextProvider';
+import { useParams } from 'react-router';
+import useSyncShapeStreamToIndexedDB from '@/lib/hooks/useSyncShapeStreamToIndexedDB';
 
 /**
  * The data type that the context provides
  */
 export interface SpectatorContextType {
 	tripId: number | undefined;
-	setTripId: (tripId: number | undefined) => void;
 	/**
 	 * During playback, this is the current time of the trip we are viewing up to, or undefined if its the live feed
 	 */
@@ -23,19 +24,16 @@ export interface SpectatorContextType {
  * A wrapper for providing the SpectatorTelemetryContext values to its children.
  */
 export default function SpectatorTelemetryContextProvider({ children }: { children: React.ReactNode }) {
-	const { db, setSyncTelemetryTripId } = use(TelemetryContext);
+	const { db, events } = use(TelemetryContext);
 
-	const [tripId, _setTripId] = useState<number | undefined>(undefined);
+	const params = useParams();
+	const tripId = parseInt(params.tripId!);
+
+	// Sync the telemetry entries of this trip to the db
+	useSyncShapeStreamToIndexedDB(new URL('/api/telemetry/' + tripId, API_BASE).toString(), db, 'telemetry', events);
+
 	const [time, setTime] = useState<number | undefined>(undefined);
 	const [paused, setPaused] = useState<boolean>(false);
-
-	function setTripId(tripId: number | undefined) {
-		_setTripId(tripId);
-		setTime(undefined);
-		setPaused(false);
-		// Also made sure we start downloading the associated telemetry entries
-		setSyncTelemetryTripId(tripId);
-	}
 
 	// During playback and not paused, move forward to the next entry automatically
 	useEffect(() => {
@@ -86,7 +84,6 @@ export default function SpectatorTelemetryContextProvider({ children }: { childr
 	// Returning the value
 	const value = {
 		tripId,
-		setTripId,
 		time,
 		setTime,
 		paused,

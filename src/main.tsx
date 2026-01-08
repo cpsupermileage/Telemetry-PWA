@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import { BrowserRouter, Outlet, Route, Routes } from 'react-router';
+import { BrowserRouter, Route, Routes } from 'react-router';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import DriverContextProvider from './components/context/DriverContextProvider';
@@ -21,22 +21,18 @@ createRoot(document.getElementById('root')!).render(
 							path="driver"
 							element={
 								<DriverContextProvider>
-									<Outlet />
+									<Dashboard />
 								</DriverContextProvider>
 							}
-						>
-							<Route path="dashboard" element={<Dashboard />} />
-						</Route>
+						/>
 						<Route
-							path="spectator"
+							path="spectator/:tripId"
 							element={
 								<SpectatorContextProvider>
-									<Outlet />
+									<Dashboard />
 								</SpectatorContextProvider>
 							}
-						>
-							<Route path="dashboard" element={<Dashboard />} />
-						</Route>
+						/>
 					</Routes>
 				</BrowserRouter>
 				<Toaster />

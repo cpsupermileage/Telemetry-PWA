@@ -1,20 +1,22 @@
-import { isChangeMessage, isControlMessage, ShapeStream, type ShapeStreamOptions } from '@electric-sql/client';
+import { isChangeMessage, isControlMessage, ShapeStream } from '@electric-sql/client';
 import type { IDBPDatabase, StoreNames } from 'idb';
 import { useEffect } from 'react';
 import type { TripRow } from '../types/TripRow';
 import type { TelemetryRow } from '../types/TelemetryRow';
 import type EventEmitter from 'eventemitter3';
 import type { TelemetryEventMap, TelemetrySchema } from '@/components/context/TelemetryContextProvider';
+import { bigIntToNumberKeys } from '../utils/bigIntToNumberKeys';
+import { camelCaseKeys } from '../utils/camelCase';
 
 // Leave options as undefined to disable
 export default function useSyncShapeStreamToIndexedDB(
-	options: ShapeStreamOptions<never> | undefined,
+	url: string,
 	db: IDBPDatabase<TelemetrySchema> | undefined,
 	storeName: StoreNames<TelemetrySchema>,
 	eventEmitter?: EventEmitter<TelemetryEventMap>
 ) {
 	useEffect(() => {
-		if (!db || !options) return;
+		if (!db) return;
 
 		// Clear the cache, it will all be re-downloaded anyways
 		// void (async () => {
@@ -27,7 +29,24 @@ export default function useSyncShapeStreamToIndexedDB(
 		// })
 
 		const aborter = new AbortController();
-		const stream = new ShapeStream<TripRow | TelemetryRow>({ ...options, signal: aborter.signal });
+		const stream = new ShapeStream<TripRow | TelemetryRow>({
+			url,
+			subscribe: true,
+			signal: aborter.signal,
+			transformer: (row: object) => bigIntToNumberKeys(camelCaseKeys(row)),
+			onError: (error: Error) => {
+				eventEmitter?.emit('downstreamSyncError', true);
+				console.error(error);
+				return {}; // To continue retrying with the same options
+			},
+			backoffOptions: {
+				initialDelay: 500,
+				multiplier: 1.2,
+				maxDelay: 5000,
+				onFailedAttempt: () => eventEmitter?.emit('downstreamSyncError', true),
+			},
+		});
+
 		stream.subscribe(async (messages) => {
 			eventEmitter?.emit('downstreamSyncError', false); // Clear the error
 			const tx = db.transaction(storeName, 'readwrite');
@@ -50,7 +69,8 @@ export default function useSyncShapeStreamToIndexedDB(
 					}
 					hasUpdate = true;
 				} else if (isControlMessage(message)) {
-					// Ignoring all of these cause im not paid enough to implement them
+					if (message.headers.control == 'up-to-date') eventEmitter?.emit('downstreamUpToDate');
+					// Ignoring the rest of these cause im not paid enough to implement them
 				}
 			}
 			await tx.done;
@@ -65,5 +85,5 @@ export default function useSyncShapeStreamToIndexedDB(
 			stream.unsubscribeAll();
 			clearInterval(statusInterval);
 		};
-	}, [db, options, storeName, eventEmitter]);
+	}, [url, db, storeName, eventEmitter]);
 }
