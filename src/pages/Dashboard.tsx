@@ -6,6 +6,7 @@ import BluetoothControl from '@/components/dashboard/BluetoothControl';
 import Menu from '@/components/dashboard/Menu';
 import { DriverContext } from '@/components/context/DriverContextProvider';
 import TripSelection from './dashboard/TripSelection';
+import SyncErrorBanner from '@/components/dashboard/SyncErrorBanner';
 
 function Dashboard() {
 	const driver = use(DriverContext);
@@ -29,6 +30,7 @@ function Dashboard() {
 					<BluetoothControl />
 				</div>
 			)}
+			<SyncErrorBanner ignoreDownstream={driver !== undefined} />
 		</main>
 	);
 }

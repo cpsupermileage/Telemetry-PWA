@@ -7,12 +7,12 @@ export default function useSyncIndexedDBToCloud(
 	db: IDBPDatabase<TelemetrySchema> | undefined,
 	storeName: StoreNames<TelemetrySchema>,
 	postUrl: string
-): () => Promise<void> {
+): () => Promise<boolean> {
 	const sync = useCallback(async () => {
 		if (!db) throw new Error('Cannot sync when db is undefined');
 		const toSync = await db.getAllFromIndex(storeName, 'by-hasLocalChanges', 1, 100);
 
-		if (toSync.length <= 0) return;
+		if (toSync.length <= 0) return false;
 
 		await apiRequest(
 			'POST',
@@ -30,6 +30,7 @@ export default function useSyncIndexedDBToCloud(
 			});
 		}
 		await tx.done;
+		return true;
 	}, [db, postUrl, storeName]);
 
 	return sync;

@@ -27,9 +27,9 @@ export default function useSyncShapeStreamToIndexedDB(
 		// })
 
 		const aborter = new AbortController();
-		const stream = new ShapeStream<TripRow | TelemetryRow>(options);
-
+		const stream = new ShapeStream<TripRow | TelemetryRow>({ ...options, signal: aborter.signal });
 		stream.subscribe(async (messages) => {
+			eventEmitter?.emit('downstreamSyncError', false); // Clear the error
 			const tx = db.transaction(storeName, 'readwrite');
 			const store = tx.objectStore(storeName);
 			let hasUpdate = false;
@@ -56,10 +56,14 @@ export default function useSyncShapeStreamToIndexedDB(
 			await tx.done;
 			if (hasUpdate) eventEmitter?.emit('update');
 		});
+		const statusInterval = setInterval(() => {
+			if (stream.isConnected()) eventEmitter?.emit('downstreamSyncError', false);
+		}, 500);
 
 		return () => {
 			aborter.abort();
 			stream.unsubscribeAll();
+			clearInterval(statusInterval);
 		};
 	}, [db, options, storeName, eventEmitter]);
 }

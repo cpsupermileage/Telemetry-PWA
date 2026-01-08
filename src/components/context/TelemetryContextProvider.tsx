@@ -1,12 +1,14 @@
 import type { LocalTelemetryRow } from '@/lib/types/TelemetryRow';
 import type { LocalTripRow } from '@/lib/types/TripRow';
 import { type DBSchema, type IDBPDatabase } from 'idb';
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import EventEmitter from 'eventemitter3';
 import useIndexedDB from '@/lib/hooks/useIndexedDB';
 import useSyncIndexedDBToCloud from '@/lib/hooks/useSyncIndexedDBToCloud';
 import useSyncShapeStreamToIndexedDB from '@/lib/hooks/useSyncShapeStreamToIndexedDB';
 import { camelCaseKeys } from '@/lib/utils/camelCase';
+import type { ShapeStreamOptions } from '@electric-sql/client';
+import { bigIntToNumberKeys } from '@/lib/utils/bigIntToNumberKeys';
 
 /**
  * The data type that the context provides
@@ -61,6 +63,8 @@ export interface TelemetrySchema extends DBSchema {
 
 export interface TelemetryEventMap {
 	update: () => void;
+	downstreamSyncError: (error: boolean) => void;
+	upstreamSyncError: (error: boolean) => void;
 }
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE as string | undefined;
@@ -97,11 +101,26 @@ export default function TelemetryContextProvider({ children }: { children: React
 	});
 
 	// Syncing the cloud changes from the server to local
-	const bigIntToNumber = (row: object) =>
-		Object.fromEntries(Object.entries(row).map(([k, v]) => [k, typeof v === 'bigint' ? Number(v) : v]));
-	const transformer = (row: object) => bigIntToNumber(camelCaseKeys(row));
+	const restOptions = useMemo<Partial<ShapeStreamOptions<never>>>(
+		() => ({
+			subscribe: true,
+			transformer: (row: object) => bigIntToNumberKeys(camelCaseKeys(row)),
+			onError: (error: Error) => {
+				events.emit('downstreamSyncError', true);
+				console.error(error);
+				return {}; // To continue retrying with the same options
+			},
+			backoffOptions: {
+				initialDelay: 500,
+				multiplier: 1.2,
+				maxDelay: 5000,
+				onFailedAttempt: () => events.emit('downstreamSyncError', true),
+			},
+		}),
+		[events]
+	);
 	useSyncShapeStreamToIndexedDB(
-		syncTrips ? { url: new URL('/api/trips', API_BASE).toString(), subscribe: true, transformer } : undefined,
+		syncTrips ? { url: new URL('/api/trips', API_BASE).toString(), ...restOptions } : undefined,
 		db,
 		'trips',
 		events
@@ -110,8 +129,7 @@ export default function TelemetryContextProvider({ children }: { children: React
 		syncTelemetryTripId
 			? {
 					url: new URL('/api/telemetry/' + syncTelemetryTripId, API_BASE).toString(),
-					subscribe: true,
-					transformer,
+					...restOptions,
 				}
 			: undefined,
 		db,
@@ -122,24 +140,35 @@ export default function TelemetryContextProvider({ children }: { children: React
 	// Syncing the local changes to the cloud
 	const syncTripsToCloud = useSyncIndexedDBToCloud(db, 'trips', '/api/trips/many');
 	const syncTelemetryToCloud = useSyncIndexedDBToCloud(db, 'telemetry', '/api/telemetry/many');
-	// Attempt push every 10 seconds
+	const onUpstreamSuccess = useCallback(
+		(uploaded: boolean) => void (uploaded && events.emit('upstreamSyncError', false)),
+		[events]
+	);
+	const onUpstreamError = useCallback(
+		(error: unknown) => {
+			console.error(error);
+			events.emit('upstreamSyncError', true);
+		},
+		[events]
+	);
+	// Attempt push every 5 seconds
 	useEffect(() => {
 		function sync() {
-			void syncTripsToCloud().catch(console.error);
-			void syncTelemetryToCloud().catch(console.error);
+			void syncTripsToCloud().then(onUpstreamSuccess, onUpstreamError);
+			void syncTelemetryToCloud().then(onUpstreamSuccess, onUpstreamError);
 		}
-		const interval = setInterval(sync, 10 * 1000); // 10 seconds
+		const interval = setInterval(sync, 5 * 1000); // 5 seconds
 		return () => clearInterval(interval);
-	}, [syncTelemetryToCloud, syncTripsToCloud]);
+	}, [syncTelemetryToCloud, syncTripsToCloud, onUpstreamSuccess, onUpstreamError]);
 	// ... or on db update
 	useEffect(() => {
 		function sync() {
-			void syncTripsToCloud().catch(console.error);
-			void syncTelemetryToCloud().catch(console.error);
+			void syncTripsToCloud().then(onUpstreamSuccess, onUpstreamError);
+			void syncTelemetryToCloud().then(onUpstreamSuccess, onUpstreamError);
 		}
 		events.on('update', sync);
 		return () => void events.off('update', sync);
-	}, [events, syncTelemetryToCloud, syncTripsToCloud]);
+	}, [events, syncTelemetryToCloud, syncTripsToCloud, onUpstreamSuccess, onUpstreamError]);
 
 	// Returning the value
 	const value = {
