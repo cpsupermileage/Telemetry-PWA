@@ -5,25 +5,28 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { LocalTripRow } from '@/lib/types/TripRow';
 import { TripType } from '@/lib/types/TripType';
 import useQuery from '@/lib/hooks/useQuery';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
 function TripSelection() {
 	const navigate = useNavigate();
 
-	const trips = useQuery(async (db) => {
-		const tx = db.transaction('trips', 'readonly');
+	const trips = useQuery(
+		useCallback(async (db) => {
+			const tx = db.transaction('trips', 'readonly');
 
-		// Iterate through records by descending createdAt order
-		const trips: LocalTripRow[] = [];
-		let cursor = await tx.objectStore('trips').index('by-createdAt').openCursor(null, 'prev');
-		while (cursor != null) {
-			trips.push(cursor.value);
-			cursor = await cursor.continue();
-		}
+			// Iterate through records by descending createdAt order
+			const trips: LocalTripRow[] = [];
+			let cursor = await tx.objectStore('trips').index('by-createdAt').openCursor(null, 'prev');
+			while (cursor != null) {
+				trips.push(cursor.value);
+				cursor = await cursor.continue();
+			}
 
-		return trips;
-	}, []);
+			return trips;
+		}, []),
+		[]
+	);
 
 	const currentTripId = useMemo(() => {
 		return trips.find(

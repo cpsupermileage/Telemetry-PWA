@@ -12,7 +12,7 @@ function EngineerView() {
 	const driver = use(DriverContext);
 	const spectator = use(SpectatorContext);
 
-	const tripId = useMemo(() => driver?.trip?.id ?? spectator?.tripId, [driver, spectator]);
+	const tripId = useMemo(() => driver?.trip?.id ?? spectator?.tripId, [driver?.trip?.id, spectator?.tripId]);
 
 	const [carData, firstCarData] = useQuery(
 		useCallback(
@@ -45,7 +45,7 @@ function EngineerView() {
 				await tx.done;
 				return [current, first];
 			},
-			[tripId, spectator]
+			[tripId, spectator?.time]
 		),
 		[undefined, undefined]
 	);

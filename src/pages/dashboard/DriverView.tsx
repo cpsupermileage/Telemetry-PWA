@@ -16,6 +16,7 @@ import { SpectatorContext } from '@/components/context/SpectatorContextProvider'
 import ControlledGoogleMaps from '@/components/dashboard/ControlledGoogleMaps';
 import type { MapCameraProps } from '@vis.gl/react-google-maps';
 import { MC_FAULT_CODE } from '@/lib/types/CarState';
+import SpectatorControls from '@/components/dashboard/SpectatorControls';
 
 function DriverView() {
 	const driver = use(DriverContext);
@@ -49,7 +50,7 @@ function DriverView() {
 			});
 	}
 
-	const tripId = useMemo(() => driver?.trip?.id ?? spectator?.tripId, [driver, spectator]);
+	const tripId = useMemo(() => driver?.trip?.id ?? spectator?.tripId, [driver?.trip?.id, spectator?.tripId]);
 
 	const [carData, prevCarData, firstCarData] = useQuery(
 		useCallback(
@@ -85,7 +86,7 @@ function DriverView() {
 				await tx.done;
 				return [current, prev, first];
 			},
-			[tripId, spectator]
+			[tripId, spectator?.time]
 		),
 		[undefined, undefined, undefined]
 	);
@@ -213,6 +214,7 @@ function DriverView() {
 						)}
 					</Widget>
 				)}
+				{spectator && <SpectatorControls />}
 				{carData?.error && (
 					<div className="absolute top-0 w-full">
 						<div className="bg-destructive text-primary-foreground flex w-full justify-center gap-2 rounded-lg px-4 py-2 text-sm">

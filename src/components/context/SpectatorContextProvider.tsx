@@ -1,7 +1,8 @@
-import { createContext, use, useEffect, useState } from 'react';
+import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react';
 import { API_BASE, TelemetryContext } from './TelemetryContextProvider';
 import { useParams } from 'react-router';
 import useSyncShapeStreamToIndexedDB from '@/lib/hooks/useSyncShapeStreamToIndexedDB';
+import useQuery from '@/lib/hooks/useQuery';
 
 /**
  * The data type that the context provides
@@ -12,12 +13,16 @@ export interface SpectatorContextType {
 	 * During playback, this is the current time of the trip we are viewing up to, or undefined if its the live feed
 	 */
 	time: number | undefined;
-	setTime: React.Dispatch<React.SetStateAction<number | undefined>>;
+	setTime: (time: number | undefined) => void;
 	/**
 	 * Wether or not the time should increase automatically.
 	 */
 	paused: boolean;
-	setPaused: React.Dispatch<React.SetStateAction<boolean>>;
+	setPaused: (paused: boolean) => void;
+	skip: (skipTime: number) => void;
+	minTime: number | undefined;
+	maxTime: number | undefined;
+	isLive: boolean;
 }
 
 /**
@@ -27,13 +32,53 @@ export default function SpectatorTelemetryContextProvider({ children }: { childr
 	const { db, events } = use(TelemetryContext);
 
 	const params = useParams();
-	const tripId = parseInt(params.tripId!);
+	const tripId = useMemo(() => parseInt(params.tripId!), [params]);
 
 	// Sync the telemetry entries of this trip to the db
 	useSyncShapeStreamToIndexedDB(new URL('/api/telemetry/' + tripId, API_BASE).toString(), db, 'telemetry', events);
 
-	const [time, setTime] = useState<number | undefined>(undefined);
-	const [paused, setPaused] = useState<boolean>(false);
+	const [time, setTime] = useState<number | undefined>(undefined); // Will be undefined if live
+	const [paused, _setPaused] = useState<boolean>(false);
+
+	const [minTime, maxTime] = useQuery(
+		useCallback(async () => {
+			if (!db) return [undefined, undefined];
+			const tx = db.transaction('telemetry', 'readonly');
+			const minCursor = await tx
+				.objectStore('telemetry')
+				.index('by-tripId-time')
+				.openKeyCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER], true));
+			if (!minCursor) return [undefined, undefined];
+			const [, min] = minCursor.key;
+
+			const maxCursor = await tx
+				.objectStore('telemetry')
+				.index('by-tripId-time')
+				.openKeyCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER], true));
+			if (!maxCursor) return [undefined, undefined];
+			const [, max] = maxCursor.key;
+
+			return [min, max];
+		}, [db, tripId]),
+		[undefined, undefined]
+	);
+
+	// Determine if the stream is still live by finding if the trip has an end time,
+	// and if not, double checking that the most recent entry is within the last hour
+	const hasEndTime = useQuery(
+		useCallback(async () => {
+			if (!db) return true;
+			const trip = await db.get('trips', tripId);
+			if (!trip) return true;
+			return trip.endedAt !== null;
+		}, [db, tripId]),
+		true
+	);
+	const isLive = useMemo(
+		// eslint-disable-next-line react-hooks/purity
+		() => !hasEndTime && (maxTime ?? Date.now()) > Date.now() - 60 * 60 * 1000,
+		[hasEndTime, maxTime]
+	);
 
 	// During playback and not paused, move forward to the next entry automatically
 	useEffect(() => {
@@ -64,22 +109,23 @@ export default function SpectatorTelemetryContextProvider({ children }: { childr
 		};
 	}, [db, tripId, time, paused]);
 
-	useEffect(() => {
-		if (!db || !tripId || time !== undefined || !paused) return;
-		// If paused and time is not set, set it to the latest entry time
-		void (async () => {
-			if (!db) return;
-			const tx = db.transaction('telemetry', 'readonly');
-			const cursor = await tx
-				.objectStore('telemetry')
-				.index('by-tripId-time')
-				.openKeyCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER], true), 'prev');
-			if (!cursor) return;
-			const [, time] = cursor.key;
-			await tx.done;
-			setTime(time);
-		})();
-	}, [db, tripId, time, paused]);
+	const setPaused = useCallback(
+		(paused: boolean) => {
+			// If pausing while live (time is undefined), update time to the max time
+			if (!paused && time === undefined) setTime(maxTime);
+			_setPaused(paused);
+		},
+		[time, maxTime]
+	);
+
+	const skip = useCallback(
+		(skipTime: number) => {
+			if (!maxTime || !minTime) return;
+			// Add skipTime to time and keep it within bounds
+			setTime(Math.max(Math.min((time ?? maxTime) + skipTime, maxTime), minTime));
+		},
+		[time, minTime, maxTime]
+	);
 
 	// Returning the value
 	const value = {
@@ -88,6 +134,10 @@ export default function SpectatorTelemetryContextProvider({ children }: { childr
 		setTime,
 		paused,
 		setPaused,
+		skip,
+		minTime,
+		maxTime,
+		isLive,
 	} satisfies SpectatorContextType;
 
 	return <SpectatorContext value={value}>{children}</SpectatorContext>;
