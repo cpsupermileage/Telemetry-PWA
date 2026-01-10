@@ -17,6 +17,7 @@ import ControlledGoogleMaps from '@/components/dashboard/ControlledGoogleMaps';
 import type { MapCameraProps } from '@vis.gl/react-google-maps';
 import { MC_FAULT_CODE } from '@/lib/types/CarState';
 import SpectatorControls from '@/components/dashboard/SpectatorControls';
+import type { LocalTripRow } from '@/lib/types/TripRow';
 
 function DriverView() {
 	const driver = use(DriverContext);
@@ -52,10 +53,17 @@ function DriverView() {
 
 	const tripId = useMemo(() => driver?.trip?.id ?? spectator?.tripId, [driver?.trip?.id, spectator?.tripId]);
 
-	const [carData, prevCarData, firstCarData] = useQuery(
+	const [carData, prevCarData, firstCarData, trip] = useQuery<
+		[
+			LocalTelemetryRow | undefined,
+			LocalTelemetryRow | undefined,
+			LocalTelemetryRow | undefined,
+			LocalTripRow | undefined,
+		]
+	>(
 		useCallback(
 			async (db) => {
-				if (!tripId) return [undefined, undefined, undefined];
+				if (!tripId) return [undefined, undefined, undefined, undefined];
 				const tx = db.transaction(['telemetry', 'trips'], 'readonly');
 
 				// Gets the most recent entry
@@ -70,7 +78,7 @@ function DriverView() {
 				// Gets the first entry after the trip started
 				const trip = await tx.objectStore('trips').index('by-id').get(tripId);
 				let first: LocalTelemetryRow | undefined;
-				if (trip?.startedAt) {
+				if (trip?.startedAt && (spectator?.time === undefined || trip.startedAt <= spectator?.time)) {
 					cursor = await tx
 						.objectStore('telemetry')
 						.index('by-tripId-time')
@@ -84,11 +92,11 @@ function DriverView() {
 				}
 
 				await tx.done;
-				return [current, prev, first];
+				return [current, prev, first, trip];
 			},
 			[tripId, spectator?.time]
 		),
-		[undefined, undefined, undefined]
+		[undefined, undefined, undefined, undefined]
 	);
 
 	const speedMPH = useMemo(() => {
@@ -98,14 +106,15 @@ function DriverView() {
 	}, [carData]);
 
 	const timeRemaining = useMemo(() => {
-		if (!carData || !driver?.trip?.startedAt) return undefined;
+		if (!carData || !trip?.startedAt) return undefined;
+		if (carData.time < trip.startedAt) return undefined;
 		// How long since the trip has started
-		const dt = +dayjs(carData.time) - +dayjs(driver.trip.startedAt);
+		const dt = +dayjs(carData.time) - +dayjs(trip.startedAt);
 		const millis = RACE_TIME_MILLIS - dt;
 		const m = Math.floor(millis / 1000 / 60) + '';
 		const s = Math.abs(Math.floor(millis / 1000) % 60) + '';
 		return `${m}:${s.padStart(2, '0')}`;
-	}, [carData, driver]);
+	}, [carData, trip]);
 
 	const milesRemaining = useMemo(() => {
 		if (!carData?.tacho || !firstCarData?.tacho) return undefined;

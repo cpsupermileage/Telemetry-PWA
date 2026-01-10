@@ -37,6 +37,10 @@ function SpectatorControls() {
 			<div className="w-full px-2">
 				<Slider
 					value={[spectator.time ?? spectator.maxTime ?? 0]}
+					onValueChange={(val) => {
+						spectator.setTime(val[0]);
+						spectator.setPaused(true);
+					}}
 					min={spectator.minTime ?? 0}
 					max={spectator.maxTime ?? 0}
 					step={1}

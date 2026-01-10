@@ -29,7 +29,7 @@ function EngineerView() {
 				// Gets the first entry after the trip started
 				const trip = await tx.objectStore('trips').index('by-id').get(tripId);
 				let first: LocalTelemetryRow | undefined;
-				if (trip?.startedAt) {
+				if (trip?.startedAt && (spectator?.time === undefined || trip.startedAt <= spectator?.time)) {
 					cursor = await tx
 						.objectStore('telemetry')
 						.index('by-tripId-time')

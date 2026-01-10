@@ -54,7 +54,7 @@ export default function SpectatorTelemetryContextProvider({ children }: { childr
 			const maxCursor = await tx
 				.objectStore('telemetry')
 				.index('by-tripId-time')
-				.openKeyCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER], true));
+				.openKeyCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER], true), 'prev');
 			if (!maxCursor) return [undefined, undefined];
 			const [, max] = maxCursor.key;
 
@@ -93,7 +93,7 @@ export default function SpectatorTelemetryContextProvider({ children }: { childr
 				.objectStore('telemetry')
 				.index('by-tripId-time')
 				.openKeyCursor(IDBKeyRange.bound([tripId, time], [tripId, Number.MAX_SAFE_INTEGER], true));
-			if (!cursor) return;
+			if (!cursor) return _setPaused(true);
 			const [, nextEntryTime] = cursor.key;
 			await tx.done;
 			const timeToNext = nextEntryTime - time - (Date.now() - start); // subtract the time it took to call the db
