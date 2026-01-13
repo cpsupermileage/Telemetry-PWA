@@ -144,6 +144,7 @@ export default function BluetoothContextProvider({ children }: { children: React
 			} catch (e) {
 				savedDevice.current = undefined; // Clear device so we can't reconnect to it, as it doesn't have the correct characteristics
 				reconnectAttempts.current = 0;
+				console.error(e);
 				throw e; // Continue the error stack
 			}
 		} catch (e) {
