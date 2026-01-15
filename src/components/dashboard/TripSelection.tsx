@@ -5,11 +5,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { LocalTripRow } from '@/lib/types/TripRow';
 import { TripType } from '@/lib/types/TripType';
 import useQuery from '@/lib/hooks/useQuery';
-import { useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
 
 function TripSelection() {
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
 
 	const trips = useQuery(
 		useCallback(async (db) => {
@@ -32,15 +33,22 @@ function TripSelection() {
 		return trips.find(
 			(trip) =>
 				!trip.endedAt &&
-				trip.startedAt &&
 				// eslint-disable-next-line react-hooks/purity
-				trip.startedAt > Date.now() - 6 * 60 * 60 * 1000
+				trip.createdAt > Date.now() - 6 * 60 * 60 * 1000
 		)?.id;
 	}, [trips]);
 
-	function goto(tripId: number) {
-		void navigate('/spectator/' + tripId);
-	}
+	const goto = useCallback(
+		(tripId: number) => {
+			void navigate('/spectator/' + tripId);
+		},
+		[navigate]
+	);
+
+	// If ?trip=current then automatically navigate to the current trip once
+	useEffect(() => {
+		if (searchParams.get('trip') === 'current' && currentTripId !== undefined) goto(currentTripId);
+	}, [currentTripId, searchParams, goto]);
 
 	return (
 		<Widget className="h-full w-full p-2 pt-0">
