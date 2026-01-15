@@ -2,7 +2,7 @@ import { use, useEffect, useState } from 'react';
 import { BluetoothContext, type BluetoothStatus } from '../context/BluetoothContextProvider';
 import Widget from './Widget';
 import { BluetoothConnected, BluetoothOff, BluetoothSearching } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { toast } from 'sonner';
 
 function BluetoothControl() {
@@ -40,8 +40,11 @@ function BluetoothControl() {
 				</Widget>
 			</button>
 			<DropdownMenu open={open} onOpenChange={setOpen}>
+				<DropdownMenuTrigger />
 				<DropdownMenuContent>
-					{status !== 'disconnected' && <DropdownMenuItem onClick={ble?.disconnect}>Disconnect</DropdownMenuItem>}
+					<DropdownMenuItem onClick={ble?.disconnect} disabled={status === 'disconnected'}>
+						Disconnect
+					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</>
