@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import { VitePWA, type ManifestOptions } from 'vite-plugin-pwa';
+import { cloudflare } from '@cloudflare/vite-plugin';
 
 const manifest: Partial<ManifestOptions> = {
 	name: 'SMV Telemetry',
@@ -54,6 +55,7 @@ export default defineConfig({
 				globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
 			},
 		}),
+		cloudflare(),
 	],
 	resolve: {
 		alias: {

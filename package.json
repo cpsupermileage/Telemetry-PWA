@@ -6,6 +6,8 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc -b && vite build",
+		"cf-typegen": "wrangler types",
+		"check": "tsc && vite build && wrangler deploy --dry-run",
 		"preview": "vite preview",
 		"lint": "eslint .",
 		"format": "prettier --write .",
@@ -13,6 +15,7 @@
 		"prepare": "husky"
 	},
 	"devDependencies": {
+		"@cloudflare/vite-plugin": "^1.25.0",
 		"@electric-sql/client": "^1.4.0",
 		"@eslint/js": "^9.39.2",
 		"@radix-ui/react-dialog": "^1.1.15",
@@ -45,6 +48,7 @@
 		"eslint-plugin-react-x": "^2.5.5",
 		"eventemitter3": "^5.0.1",
 		"globals": "^16.5.0",
+		"hono": "^4.11.9",
 		"husky": "^9.1.7",
 		"idb": "^8.0.3",
 		"lint-staged": "^16.2.7",
@@ -62,7 +66,8 @@
 		"typescript": "~5.9.3",
 		"typescript-eslint": "^8.52.0",
 		"vite": "npm:rolldown-vite@7.1.14",
-		"vite-plugin-pwa": "^1.2.0"
+		"vite-plugin-pwa": "^1.2.0",
+		"wrangler": "^4.65.0"
 	},
 	"pnpm": {
 		"overrides": {
