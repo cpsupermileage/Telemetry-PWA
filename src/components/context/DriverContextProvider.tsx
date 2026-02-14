@@ -32,16 +32,15 @@ export default function DriverContextProvider({ children }: { children: React.Re
 
 			const id = 'id' in trip && typeof trip.id === 'number' ? trip.id : genRandomId();
 
-			// @ts-expect-error Trust me bro
 			await db.put('trips', {
 				...trip,
 				id,
-				hasLocalChanges: 1,
+				editedAt: 0,
 			});
-			// @ts-expect-error Trust me bro
 			_setTrip({
 				...trip,
 				id,
+				editedAt: 0,
 			});
 			events.emit('update');
 		},
@@ -79,7 +78,7 @@ export default function DriverContextProvider({ children }: { children: React.Re
 			lat: geoCache.current?.coords.latitude ?? null,
 			long: geoCache.current?.coords.longitude ?? null,
 			heading: geoCache.current?.coords.heading ?? null,
-			hasLocalChanges: 1,
+			editedAt: 0,
 		});
 
 		// Clear caches immediately after we push to db

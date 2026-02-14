@@ -1,11 +1,11 @@
-import type { LocalTelemetryRow } from '@/lib/types/TelemetryRow';
-import type { LocalTripRow } from '@/lib/types/TripRow';
+import type { TelemetryRow } from '@/lib/types/TelemetryRow';
+import type { TripRow } from '@/lib/types/TripRow';
 import { type DBSchema, type IDBPDatabase } from 'idb';
 import { createContext, useCallback, useEffect, useState } from 'react';
 import EventEmitter from 'eventemitter3';
 import useIndexedDB from '@/lib/hooks/useIndexedDB';
 import useSyncIndexedDBToCloud from '@/lib/hooks/useSyncIndexedDBToCloud';
-import useSyncShapeStreamToIndexedDB from '@/lib/hooks/useSyncShapeStreamToIndexedDB';
+import useSubscribeToDatabaseUpdates from '@/lib/hooks/useSubscribeToDatabaseUpdates';
 
 /**
  * The data type that the context provides
@@ -18,21 +18,22 @@ export interface TelemetryContextType {
 export interface TelemetrySchema extends DBSchema {
 	trips: {
 		key: number;
-		value: LocalTripRow;
+		value: TripRow;
 		indexes: {
 			'by-id': number;
 			'by-createdAt': number;
-			'by-hasLocalChanges': number;
+			'by-editedAt': number;
 		};
 	};
 	telemetry: {
 		key: number;
-		value: LocalTelemetryRow;
+		value: TelemetryRow;
 		indexes: {
 			'by-id': number;
 			'by-tripId': number;
 			'by-tripId-time': [number, number];
-			'by-hasLocalChanges': number;
+			'by-editedAt': number;
+			'by-tripId-editedAt': [number, number];
 		};
 	};
 }
@@ -41,10 +42,7 @@ export interface TelemetryEventMap {
 	update: () => void;
 	downstreamSyncError: (error: boolean) => void;
 	upstreamSyncError: (error: boolean) => void;
-	downstreamUpToDate: () => void;
 }
-
-export const API_BASE = import.meta.env.PUBLIC_API_BASE as string | undefined;
 
 /**
  * A wrapper for providing the TelemetryContext values to its children.
@@ -61,7 +59,7 @@ export default function TelemetryContextProvider({ children }: { children: React
 			});
 			trips.createIndex('by-id', 'id', { unique: true });
 			trips.createIndex('by-createdAt', 'createdAt', { unique: false });
-			trips.createIndex('by-hasLocalChanges', 'hasLocalChanges', { unique: false });
+			trips.createIndex('by-editedAt', 'editedAt', { unique: false });
 
 			const telemetry = db.createObjectStore('telemetry', {
 				keyPath: 'id',
@@ -70,17 +68,18 @@ export default function TelemetryContextProvider({ children }: { children: React
 			telemetry.createIndex('by-id', 'id', { unique: true });
 			telemetry.createIndex('by-tripId', 'tripId', { unique: false });
 			telemetry.createIndex('by-tripId-time', ['tripId', 'time'], { unique: false });
-			telemetry.createIndex('by-hasLocalChanges', 'hasLocalChanges', { unique: false });
+			telemetry.createIndex('by-editedAt', 'editedAt', { unique: false });
+			telemetry.createIndex('by-tripId-editedAt', ['tripId', 'editedAt'], { unique: false });
 		},
 	});
 
 	// Syncing the cloud changes from the server to local
 	// Always sync trip changes, telemetry changes will be handled by the SpectatorContextProvider
-	useSyncShapeStreamToIndexedDB(new URL('/api/trips', API_BASE).toString(), db, 'trips', events);
+	useSubscribeToDatabaseUpdates('/api/trips', db, 'trips', events);
 
 	// Syncing the local changes to the cloud
-	const syncTripsToCloud = useSyncIndexedDBToCloud(db, 'trips', '/api/trips/many');
-	const syncTelemetryToCloud = useSyncIndexedDBToCloud(db, 'telemetry', '/api/telemetry/many');
+	const syncTripsToCloud = useSyncIndexedDBToCloud(db, 'trips', '/api/trips');
+	const syncTelemetryToCloud = useSyncIndexedDBToCloud(db, 'telemetry', '/api/telemetry');
 	const onUpstreamSuccess = useCallback(
 		(uploaded: boolean) => void (uploaded && events.emit('upstreamSyncError', false)),
 		[events]

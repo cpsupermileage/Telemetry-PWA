@@ -1,7 +1,6 @@
-import type { Row } from '@electric-sql/client';
 import type { CarState } from './CarState';
 
-export interface TelemetryRow extends Row, CarState {
+export interface TelemetryRow extends CarState {
 	// header
 	id: number;
 	tripId: number;
@@ -14,8 +13,6 @@ export interface TelemetryRow extends Row, CarState {
 	lat: number | null;
 	long: number | null;
 	heading: number | null;
-}
-
-export interface LocalTelemetryRow extends TelemetryRow {
-	hasLocalChanges: number; // 0 or 1
+	// For syncing
+	editedAt: number; // 0 means it is local and needs to be synced to the server
 }

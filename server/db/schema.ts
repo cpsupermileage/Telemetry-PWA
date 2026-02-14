@@ -12,7 +12,7 @@ export const tripsTable = sqliteTable(
 		// For syncing
 		editedAt: integer('edited_at', { mode: 'number' }).notNull(),
 	},
-	(table) => [index('idx_editedAt').on(table.editedAt)]
+	(table) => [index('idx_trips_editedAt').on(table.editedAt)]
 );
 
 export const telemetryTable = sqliteTable(
@@ -42,6 +42,6 @@ export const telemetryTable = sqliteTable(
 	(table) => [
 		index('idx_tripId').on(table.tripId),
 		index('idx_time').on(table.time),
-		index('idx_editedAt').on(table.editedAt),
+		index('idx_telemetry_editedAt').on(table.editedAt),
 	]
 );

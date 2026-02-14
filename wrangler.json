@@ -15,7 +15,8 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "main",
+			"database_name": "smv-telemetry",
+			"database_id": "05d77a29-5982-4c8f-a72b-d21ab96474b3",
 			"migrations_dir": "drizzle/migrations"
 		}
 	],
@@ -26,5 +27,11 @@
 				"class_name": "WebSocketBroadcastServer"
 			}
 		]
-	}
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": ["WebSocketBroadcastServer"]
+		}
+	]
 }

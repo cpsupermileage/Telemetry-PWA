@@ -10,14 +10,14 @@ import { AlertCircleIcon, Octagon, Play } from 'lucide-react';
 import { DriverContext } from '@/components/context/DriverContextProvider';
 import useQuery from '@/lib/hooks/useQuery';
 import { MOTOR_STEPS, RACE_LENGTH_MILES, RACE_TIME_MILLIS, WHEEL_RADIUS_METERS } from '@/constants';
-import type { LocalTelemetryRow } from '@/lib/types/TelemetryRow';
+import type { TelemetryRow } from '@/lib/types/TelemetryRow';
 import dayjs from '@/lib/utils/dayjs';
 import { SpectatorContext } from '@/components/context/SpectatorContextProvider';
 import ControlledGoogleMaps from '@/components/dashboard/ControlledGoogleMaps';
 import type { MapCameraProps } from '@vis.gl/react-google-maps';
 import { MC_FAULT_CODE } from '@/lib/types/CarState';
 import SpectatorControls from '@/components/dashboard/SpectatorControls';
-import type { LocalTripRow } from '@/lib/types/TripRow';
+import type { TripRow } from '@/lib/types/TripRow';
 
 function DriverView() {
 	const driver = use(DriverContext);
@@ -25,6 +25,7 @@ function DriverView() {
 
 	function startTrip() {
 		if (!driver) return toast.error('Function not available');
+		if (driver.trip === undefined) return;
 		driver
 			.setTrip({
 				...driver.trip,
@@ -54,12 +55,7 @@ function DriverView() {
 	const tripId = useMemo(() => driver?.trip?.id ?? spectator?.tripId, [driver?.trip?.id, spectator?.tripId]);
 
 	const [carData, prevCarData, firstCarData, trip] = useQuery<
-		[
-			LocalTelemetryRow | undefined,
-			LocalTelemetryRow | undefined,
-			LocalTelemetryRow | undefined,
-			LocalTripRow | undefined,
-		]
+		[TelemetryRow | undefined, TelemetryRow | undefined, TelemetryRow | undefined, TripRow | undefined]
 	>(
 		useCallback(
 			async (db) => {
@@ -77,7 +73,7 @@ function DriverView() {
 				const prev = cursor?.value;
 				// Gets the first entry after the trip started
 				const trip = await tx.objectStore('trips').index('by-id').get(tripId);
-				let first: LocalTelemetryRow | undefined;
+				let first: TelemetryRow | undefined;
 				if (trip?.startedAt && (spectator?.time === undefined || trip.startedAt <= spectator?.time)) {
 					cursor = await tx
 						.objectStore('telemetry')

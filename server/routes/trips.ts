@@ -55,7 +55,7 @@ router.post('/', async (c) => {
 	const stub = c.env.BROADCAST_SERVER.getByName('trips') as DurableObjectStub<WebSocketBroadcastServer>;
 	waitUntil(stub.broadcastMessage(trips));
 
-	return c.json({}, 200);
+	return c.json(trips, 200);
 });
 
 export default router;

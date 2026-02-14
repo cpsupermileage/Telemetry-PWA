@@ -77,7 +77,7 @@ router.post('/', async (c) => {
 		waitUntil(stub.broadcastMessage(val)); // Return from the function as fast as possible and worry about broadcast later
 	}
 
-	return c.json({}, 200);
+	return c.json(telemetry, 200);
 });
 
 export default router;
