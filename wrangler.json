@@ -11,5 +11,20 @@
 	"assets": {
 		"directory": "./dist",
 		"not_found_handling": "single-page-application"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "main",
+			"migrations_dir": "drizzle/migrations"
+		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "BROADCAST_SERVER",
+				"class_name": "WebSocketBroadcastServer"
+			}
+		]
 	}
 }
