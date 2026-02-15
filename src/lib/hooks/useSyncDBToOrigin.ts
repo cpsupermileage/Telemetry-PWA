@@ -9,24 +9,26 @@ import apiRequest from '../utils/apiClient';
 
 // Leave options as undefined to disable
 export default function useSyncDBToOrigin(
-	url: string,
 	db: IDBPDatabase<TelemetrySchema> | undefined,
 	storeName: StoreNames<TelemetrySchema>,
+	tripId?: number,
 	eventEmitter?: EventEmitter<TelemetryEventMap>
 ) {
 	useEffect(() => {
 		if (!db) return;
-		return _syncDBToOrigin(url, db, storeName, eventEmitter);
-	}, [db, eventEmitter, storeName, url]);
+		if (storeName === 'telemetry' && tripId === undefined) return;
+		return _syncDBToOrigin(db, storeName, tripId, eventEmitter);
+	}, [db, storeName, tripId, eventEmitter]);
 }
 
 // Split the logic into its own internal function because im so tired of having to deal with useCallback and whatnot
 function _syncDBToOrigin(
-	url: string,
 	db: IDBPDatabase<TelemetrySchema>,
 	storeName: StoreNames<TelemetrySchema>,
+	tripId?: number,
 	eventEmitter?: EventEmitter<TelemetryEventMap>
 ): ReturnType<EffectCallback> {
+	const baseUrl = storeName === 'trips' ? '/api/trips' : '/api/telemetry/' + tripId;
 	// If we should close everything bc the component is unmounted
 	let closed = false;
 	// The current websocket conn
@@ -45,7 +47,6 @@ function _syncDBToOrigin(
 			const cursor = await idx.openKeyCursor(IDBKeyRange.bound(0, Number.MAX_SAFE_INTEGER), 'prev');
 			latestEdit = cursor?.key ?? 0;
 		} else {
-			const tripId = Number(url.split('/').pop()!); // Awful code workaround but i just want this to work
 			const tx = db.transaction(storeName, 'readonly');
 			const idx = tx.objectStore(storeName).index('by-tripId-editedAt');
 			const cursor = await idx.openKeyCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER]), 'prev');
@@ -53,7 +54,10 @@ function _syncDBToOrigin(
 		}
 		// Continue downloading everything until we are up to date
 		while (!httpSyncFinished && !closed) {
-			let res = (await apiRequest('GET', url + '?max=100&updatedAfter=' + latestEdit)) as (TripRow | TelemetryRow)[];
+			let res = (await apiRequest('GET', `${baseUrl}?max=100&updatedAfter=${latestEdit}`)) as (
+				| TripRow
+				| TelemetryRow
+			)[];
 			if (messageBuffer.length > 0) res = res.filter((row) => row.editedAt <= messageBuffer[0].editedAt); // Remove items we've already gotten from the websocket
 			if (res.length < 100)
 				httpSyncFinished = true; // If we are caught up on data, or reached where the websocket started collecting data, then we are done
@@ -73,7 +77,7 @@ function _syncDBToOrigin(
 		if (storeName === 'trips') {
 			toSync = await db.getAllFromIndex(storeName, 'by-editedAt', 0, 50);
 		} else {
-			const tripId = Number(url.split('/').pop()!); // Awful code workaround but i just want this to work
+			if (tripId === undefined) return;
 			toSync = await db.getAllFromIndex(storeName, 'by-tripId-editedAt', [tripId, 0], 50);
 		}
 		if (toSync.length == 0) return;
@@ -84,9 +88,13 @@ function _syncDBToOrigin(
 
 	function connect() {
 		if (ws) ws.close();
-		if (httpSyncFinished) downloadDataOverHttp().catch(() => toast.error('Error fetching past telemetry data'));
+		if (httpSyncFinished)
+			downloadDataOverHttp().catch((e) => {
+				console.error(e);
+				toast.error('Error fetching past telemetry data');
+			});
 
-		const conn = new WebSocket(url + '/ws');
+		const conn = new WebSocket(`${baseUrl}/ws`);
 
 		conn.addEventListener('open', () => eventEmitter?.emit('downstreamSyncError', false));
 		conn.addEventListener('error', () => {
@@ -102,6 +110,7 @@ function _syncDBToOrigin(
 		conn.addEventListener('message', (e: MessageEvent<string>) => {
 			eventEmitter?.emit('downstreamSyncError', false);
 			const updates = JSON.parse(e.data) as (TripRow | TelemetryRow)[];
+			if (updates.length == 0) return;
 			(async () => {
 				if (!httpSyncFinished) return messageBuffer.push(...updates); // Buffer messages until http sync is done
 				if (messageBuffer.length > 0) {
@@ -112,6 +121,7 @@ function _syncDBToOrigin(
 				const store = tx.objectStore(storeName);
 				for (const row of updates) await store.put(row);
 				await tx.done;
+				eventEmitter?.emit('update');
 			})().catch(() => toast.error('DB error syncing origin changes to local cache'));
 		});
 
@@ -121,7 +131,10 @@ function _syncDBToOrigin(
 	connect();
 
 	function wrappedUploadLocalUpdateViaWebsocket() {
-		uploadLocalUpdateViaWebsocket().catch(() => toast.error('Error send local changes over websocket'));
+		uploadLocalUpdateViaWebsocket().catch((e) => {
+			console.error(e);
+			toast.error('Error send local changes over websocket');
+		});
 	}
 	eventEmitter?.on('update', wrappedUploadLocalUpdateViaWebsocket);
 	const interval = setInterval(wrappedUploadLocalUpdateViaWebsocket, 5000);

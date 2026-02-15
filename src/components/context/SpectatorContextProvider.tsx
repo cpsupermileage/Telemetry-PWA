@@ -35,7 +35,7 @@ export default function SpectatorTelemetryContextProvider({ children }: { childr
 	const tripId = useMemo(() => parseInt(params.tripId!), [params]);
 
 	// Sync the telemetry entries of this trip to the db
-	useSyncDBToOrigin('/api/telemetry/' + tripId, db, 'telemetry', events);
+	useSyncDBToOrigin(db, 'telemetry', tripId, events);
 
 	const [time, setTime] = useState<number | undefined>(undefined); // Will be undefined if live
 	const [paused, _setPaused] = useState<boolean>(false);

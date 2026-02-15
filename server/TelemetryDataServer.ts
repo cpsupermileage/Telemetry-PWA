@@ -1,7 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { drizzle, DrizzleSqliteDODatabase } from 'drizzle-orm/durable-sqlite';
 import { migrate } from 'drizzle-orm/durable-sqlite/migrator';
-import migrations from '../drizzle/trips/migrations';
+import migrations from '../drizzle/telemetry/migrations';
 import { telemetrySetter, telemetryTable } from './db/telemetry';
 import { asc, gt } from 'drizzle-orm/sqlite-core/expressions';
 import { telemetrySchema } from './validation/telemetry';
@@ -40,7 +40,10 @@ export class TelemetryDataServer extends DurableObject {
 		const res = telemetrySchema.safeParse(
 			JSON.parse(typeof message === 'string' ? message : new TextDecoder().decode(message))
 		);
-		if (!res.success) return console.error('Invalid request, ignoring');
+		if (!res.success)
+			return console.error(
+				'Invalid request: ' + res.error.issues[0].path.join('.') + ': ' + res.error.issues[0].message
+			);
 		const data = res.data.map((row) => ({ ...row, editedAt: Date.now() }));
 
 		this.db

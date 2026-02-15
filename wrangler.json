@@ -2,7 +2,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "telemetry-pwa",
 	"main": "./server/index.ts",
-	"compatibility_date": "2026-02-13",
+	"compatibility_date": "2026-02-12",
 	"compatibility_flags": ["nodejs_compat"],
 	"observability": {
 		"enabled": true
@@ -28,6 +28,13 @@
 		{
 			"tag": "v1",
 			"new_sqlite_classes": ["TripsDataServer", "TelemetryDataServer"]
+		}
+	],
+	"rules": [
+		{
+			"type": "Text",
+			"globs": ["**/*.sql"],
+			"fallthrough": true
 		}
 	]
 }

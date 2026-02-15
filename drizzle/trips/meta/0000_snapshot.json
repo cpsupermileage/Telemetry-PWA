@@ -1,7 +1,7 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "a2862b2a-16d8-465d-bf9f-b83e149bb8c9",
+	"id": "0c0a0732-206e-4b71-8c3d-9763471c033a",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"tables": {
 		"trips": {

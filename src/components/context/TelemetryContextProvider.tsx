@@ -31,7 +31,6 @@ export interface TelemetrySchema extends DBSchema {
 			'by-id': number;
 			'by-tripId': number;
 			'by-tripId-time': [number, number];
-			'by-editedAt': number;
 			'by-tripId-editedAt': [number, number];
 		};
 	};
@@ -50,8 +49,11 @@ export default function TelemetryContextProvider({ children }: { children: React
 	const [events] = useState<EventEmitter<TelemetryEventMap>>(() => new EventEmitter());
 
 	// Handle the db
-	const db = useIndexedDB<TelemetrySchema>('telemetry-cache', 1, {
+	const db = useIndexedDB<TelemetrySchema>('telemetry-cache', 2, {
 		upgrade(db) {
+			if (db.objectStoreNames.contains('trips')) db.deleteObjectStore('trips');
+			if (db.objectStoreNames.contains('telemetry')) db.deleteObjectStore('telemetry');
+
 			const trips = db.createObjectStore('trips', {
 				keyPath: 'id',
 				autoIncrement: false,
@@ -67,14 +69,13 @@ export default function TelemetryContextProvider({ children }: { children: React
 			telemetry.createIndex('by-id', 'id', { unique: true });
 			telemetry.createIndex('by-tripId', 'tripId', { unique: false });
 			telemetry.createIndex('by-tripId-time', ['tripId', 'time'], { unique: false });
-			telemetry.createIndex('by-editedAt', 'editedAt', { unique: false });
 			telemetry.createIndex('by-tripId-editedAt', ['tripId', 'editedAt'], { unique: false });
 		},
 	});
 
 	// Syncing the trip changes both directions over a websocket
 	// Telemetry changes will be handled by the SpectatorContextProvider
-	useSyncDBToOrigin('/api/trips', db, 'trips', events);
+	useSyncDBToOrigin(db, 'trips', undefined, events);
 
 	// Returning the value
 	const value = {

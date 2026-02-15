@@ -40,7 +40,10 @@ export class TripsDataServer extends DurableObject {
 		const res = tripSchema.safeParse(
 			JSON.parse(typeof message === 'string' ? message : new TextDecoder().decode(message))
 		);
-		if (!res.success) return console.error('Invalid request, ignoring');
+		if (!res.success)
+			return console.error(
+				'Invalid request: ' + res.error.issues[0].path.join('.') + ': ' + res.error.issues[0].message
+			);
 		const data = res.data.map((row) => ({ ...row, editedAt: Date.now() }));
 
 		this.db

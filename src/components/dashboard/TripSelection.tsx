@@ -2,7 +2,7 @@ import Widget from '@/components/dashboard/Widget';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { LocalTripRow } from '@/lib/types/TripRow';
+import type { TripRow } from '@/lib/types/TripRow';
 import { TripType } from '@/lib/types/TripType';
 import useQuery from '@/lib/hooks/useQuery';
 import { useCallback, useEffect, useMemo } from 'react';
@@ -17,7 +17,7 @@ function TripSelection() {
 			const tx = db.transaction('trips', 'readonly');
 
 			// Iterate through records by descending createdAt order
-			const trips: LocalTripRow[] = [];
+			const trips: TripRow[] = [];
 			let cursor = await tx.objectStore('trips').index('by-createdAt').openCursor(null, 'prev');
 			while (cursor != null) {
 				trips.push(cursor.value);

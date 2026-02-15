@@ -1,11 +1,11 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "53a46dd0-bc45-4d82-a188-3c5c43175e61",
+	"id": "b8a3da71-5ec3-4810-b0fc-06c679a0ae3f",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"tables": {
-		"trips": {
-			"name": "trips",
+		"telemetry": {
+			"name": "telemetry",
 			"columns": {
 				"id": {
 					"name": "id",
@@ -14,37 +14,107 @@
 					"notNull": true,
 					"autoincrement": true
 				},
-				"name": {
-					"name": "name",
-					"type": "text(512)",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
-				},
-				"type": {
-					"name": "type",
+				"trip_id": {
+					"name": "trip_id",
 					"type": "integer",
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false
 				},
-				"created_at": {
-					"name": "created_at",
+				"time": {
+					"name": "time",
 					"type": "integer",
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false
 				},
-				"started_at": {
-					"name": "started_at",
+				"temp_mosfet": {
+					"name": "temp_mosfet",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"temp_motor": {
+					"name": "temp_motor",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"motor_current": {
+					"name": "motor_current",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"input_current": {
+					"name": "input_current",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"duty_cycle": {
+					"name": "duty_cycle",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"tacho": {
+					"name": "tacho",
 					"type": "integer",
 					"primaryKey": false,
 					"notNull": false,
 					"autoincrement": false
 				},
-				"ended_at": {
-					"name": "ended_at",
+				"rpm": {
+					"name": "rpm",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"volts": {
+					"name": "volts",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"watt_hours": {
+					"name": "watt_hours",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"error": {
+					"name": "error",
 					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"lat": {
+					"name": "lat",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"long": {
+					"name": "long",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"heading": {
+					"name": "heading",
+					"type": "real",
 					"primaryKey": false,
 					"notNull": false,
 					"autoincrement": false
@@ -58,8 +128,18 @@
 				}
 			},
 			"indexes": {
-				"idx_trips_editedAt": {
-					"name": "idx_trips_editedAt",
+				"idx_tripId": {
+					"name": "idx_tripId",
+					"columns": ["trip_id"],
+					"isUnique": false
+				},
+				"idx_time": {
+					"name": "idx_time",
+					"columns": ["time"],
+					"isUnique": false
+				},
+				"idx_telemetry_editedAt": {
+					"name": "idx_telemetry_editedAt",
 					"columns": ["edited_at"],
 					"isUnique": false
 				}

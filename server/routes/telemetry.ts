@@ -12,12 +12,12 @@ const tripIdSchema = z.coerce
 	.number()
 	.min(0)
 	.max(2 ** 31);
-router.get('/:tripId', (c) => {
+router.get('/:tripId', async (c) => {
 	const tripId = tripIdSchema.parse(c.req.param('tripId'));
 	const max = maxSchema.parse(c.req.query('max'));
 	const updatedAfter = updatedAfterSchema.parse(c.req.query('updatedAfter'));
 	const stub = c.env.TELEMETRY_DATA_SERVER.getByName(tripId + '') as DurableObjectStub<TelemetryDataServer>;
-	const telemetry = stub.select(max, updatedAfter);
+	const telemetry = await stub.select(max, updatedAfter);
 	return c.json(telemetry);
 });
 

@@ -5,6 +5,7 @@ import debouncedFunction from '@/lib/utils/debouncedFunction';
 import genRandomId from '@/lib/utils/genRandomId';
 import type { CarState } from '@/lib/types/CarState';
 import { TelemetryContext } from './TelemetryContextProvider';
+import useSyncDBToOrigin from '@/lib/hooks/useSyncDBToOrigin';
 
 /**
  * The data type that the context provides
@@ -22,6 +23,9 @@ export default function DriverContextProvider({ children }: { children: React.Re
 	const ble = use(BluetoothContext);
 	const { db, events } = use(TelemetryContext);
 	const [trip, _setTrip] = useState<TripRow | undefined>(undefined);
+
+	// Sync the telemetry entries of this trip to the db
+	useSyncDBToOrigin(db, 'telemetry', trip?.id, events);
 
 	// If not already exists, adds to db, if it does exist, patch the current entry
 	const setTrip = useCallback(

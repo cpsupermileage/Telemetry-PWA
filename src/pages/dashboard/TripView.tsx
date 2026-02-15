@@ -29,6 +29,9 @@ function TripView() {
 				name: name || placeholder,
 				type: tripType,
 				createdAt: Date.now(),
+				startedAt: null,
+				endedAt: null,
+				editedAt: 0,
 			})
 			.catch((err) => {
 				console.error(err);

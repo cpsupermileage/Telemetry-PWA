@@ -3,7 +3,7 @@ import { SpectatorContext } from '@/components/context/SpectatorContextProvider'
 import Widget from '@/components/dashboard/Widget';
 import { WidgetStatistic } from '@/components/dashboard/WidgetStatistic';
 import { MOTOR_STEPS, WHEEL_RADIUS_METERS } from '@/constants';
-import type { LocalTelemetryRow } from '@/lib/types/TelemetryRow';
+import type { TelemetryRow } from '@/lib/types/TelemetryRow';
 import useQuery from '@/lib/hooks/useQuery';
 import { BatteryFull, Cog, Cpu, Disc2 } from 'lucide-react';
 import { use, useCallback, useMemo } from 'react';
@@ -28,7 +28,7 @@ function EngineerView() {
 				const current = cursor?.value;
 				// Gets the first entry after the trip started
 				const trip = await tx.objectStore('trips').index('by-id').get(tripId);
-				let first: LocalTelemetryRow | undefined;
+				let first: TelemetryRow | undefined;
 				if (trip?.startedAt && (spectator?.time === undefined || trip.startedAt <= spectator?.time)) {
 					cursor = await tx
 						.objectStore('telemetry')
