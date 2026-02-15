@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import apiRequest from '../utils/apiClient';
 
 // Leave options as undefined to disable
-export default function useSubscribeToDatabaseUpdates(
+export default function useSyncDBToOrigin(
 	url: string,
 	db: IDBPDatabase<TelemetrySchema> | undefined,
 	storeName: StoreNames<TelemetrySchema>,
@@ -16,12 +16,12 @@ export default function useSubscribeToDatabaseUpdates(
 ) {
 	useEffect(() => {
 		if (!db) return;
-		return _subscribeToDatabaseUpdates(url, db, storeName, eventEmitter);
+		return _syncDBToOrigin(url, db, storeName, eventEmitter);
 	}, [db, eventEmitter, storeName, url]);
 }
 
 // Split the logic into its own internal function because im so tired of having to deal with useCallback and whatnot
-function _subscribeToDatabaseUpdates(
+function _syncDBToOrigin(
 	url: string,
 	db: IDBPDatabase<TelemetrySchema>,
 	storeName: StoreNames<TelemetrySchema>,
@@ -33,9 +33,9 @@ function _subscribeToDatabaseUpdates(
 	let ws: WebSocket | null = null;
 	// Cache all the websocket received values until the history up until now has been synced via http
 	let messageBuffer: (TripRow | TelemetryRow)[] = [];
-	let httpSyncFinished = false;
+	let httpSyncFinished = true;
 
-	async function syncHttp() {
+	async function downloadDataOverHttp() {
 		httpSyncFinished = false;
 		let latestEdit = 0;
 		// Due to the different indexes, we need to have different code for getting the latest edit
@@ -45,26 +45,46 @@ function _subscribeToDatabaseUpdates(
 			const cursor = await idx.openKeyCursor(IDBKeyRange.bound(0, Number.MAX_SAFE_INTEGER), 'prev');
 			latestEdit = cursor?.key ?? 0;
 		} else {
-			const tripId = url.split('/').pop()!; // Awful code workaround but i just want this to work
+			const tripId = Number(url.split('/').pop()!); // Awful code workaround but i just want this to work
 			const tx = db.transaction(storeName, 'readonly');
 			const idx = tx.objectStore(storeName).index('by-tripId-editedAt');
 			const cursor = await idx.openKeyCursor(IDBKeyRange.bound([tripId, 0], [tripId, Number.MAX_SAFE_INTEGER]), 'prev');
 			latestEdit = cursor?.key[1] ?? 0;
 		}
-		let res = (await apiRequest('GET', url + '?max=100&updatedAfter=' + latestEdit)) as (TripRow | TelemetryRow)[];
-		if (messageBuffer.length > 0) res = res.filter((row) => row.editedAt <= messageBuffer[0].editedAt); // Remove items we've already gotten from the websocket
-		if (res.length < 100) httpSyncFinished = true; // If we are caught up on data, or reached where the websocket started collecting data, then we are done
-		// Insert all the data
-		const tx = db.transaction(storeName, 'readwrite');
-		const store = tx.objectStore(storeName);
-		for (const row of res) await store.put(row);
-		await tx.done;
-		// If we still have more to go, call again
-		if (!httpSyncFinished && !closed) await syncHttp();
+		// Continue downloading everything until we are up to date
+		while (!httpSyncFinished && !closed) {
+			let res = (await apiRequest('GET', url + '?max=100&updatedAfter=' + latestEdit)) as (TripRow | TelemetryRow)[];
+			if (messageBuffer.length > 0) res = res.filter((row) => row.editedAt <= messageBuffer[0].editedAt); // Remove items we've already gotten from the websocket
+			if (res.length < 100)
+				httpSyncFinished = true; // If we are caught up on data, or reached where the websocket started collecting data, then we are done
+			else latestEdit = Math.max(latestEdit + 1, res[res.length - 1].editedAt);
+			// Insert all the data
+			const tx = db.transaction(storeName, 'readwrite');
+			const store = tx.objectStore(storeName);
+			for (const row of res) await store.put(row);
+			await tx.done;
+		}
+	}
+
+	async function uploadLocalUpdateViaWebsocket() {
+		if (!ws || ws.readyState != ws.OPEN) return;
+
+		let toSync: (TripRow | TelemetryRow)[] = [];
+		if (storeName === 'trips') {
+			toSync = await db.getAllFromIndex(storeName, 'by-editedAt', 0, 50);
+		} else {
+			const tripId = Number(url.split('/').pop()!); // Awful code workaround but i just want this to work
+			toSync = await db.getAllFromIndex(storeName, 'by-tripId-editedAt', [tripId, 0], 50);
+		}
+		if (toSync.length == 0) return;
+
+		ws.send(JSON.stringify(toSync));
+		// Updates will be received via the websocket events defined below
 	}
 
 	function connect() {
 		if (ws) ws.close();
+		if (httpSyncFinished) downloadDataOverHttp().catch(() => toast.error('Error fetching past telemetry data'));
 
 		const conn = new WebSocket(url + '/ws');
 
@@ -99,10 +119,17 @@ function _subscribeToDatabaseUpdates(
 	}
 
 	connect();
-	syncHttp().catch(() => toast.error('Error fetching past telemetry data'));
+
+	function wrappedUploadLocalUpdateViaWebsocket() {
+		uploadLocalUpdateViaWebsocket().catch(() => toast.error('Error send local changes over websocket'));
+	}
+	eventEmitter?.on('update', wrappedUploadLocalUpdateViaWebsocket);
+	const interval = setInterval(wrappedUploadLocalUpdateViaWebsocket, 5000);
 
 	return () => {
 		ws?.close();
+		eventEmitter?.off('update', wrappedUploadLocalUpdateViaWebsocket);
+		clearInterval(interval);
 		closed = true;
 	};
 }

@@ -22,5 +22,5 @@
 		"noFallthroughCasesInSwitch": true,
 		"noUncheckedSideEffectImports": true
 	},
-	"include": ["vite.config.ts", "drizzle.config.ts"]
+	"include": ["vite.config.ts", "drizzle-trips.config.ts", "drizzle-telemetry.config.ts"]
 }

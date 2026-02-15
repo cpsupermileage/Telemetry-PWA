@@ -1,8 +1,8 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react';
 import { TelemetryContext } from './TelemetryContextProvider';
 import { useParams } from 'react-router';
-import useSubscribeToDatabaseUpdates from '@/lib/hooks/useSubscribeToDatabaseUpdates';
 import useQuery from '@/lib/hooks/useQuery';
+import useSyncDBToOrigin from '@/lib/hooks/useSyncDBToOrigin';
 
 /**
  * The data type that the context provides
@@ -35,7 +35,7 @@ export default function SpectatorTelemetryContextProvider({ children }: { childr
 	const tripId = useMemo(() => parseInt(params.tripId!), [params]);
 
 	// Sync the telemetry entries of this trip to the db
-	useSubscribeToDatabaseUpdates('/api/telemetry/' + tripId, db, 'telemetry', events);
+	useSyncDBToOrigin('/api/telemetry/' + tripId, db, 'telemetry', events);
 
 	const [time, setTime] = useState<number | undefined>(undefined); // Will be undefined if live
 	const [paused, _setPaused] = useState<boolean>(false);

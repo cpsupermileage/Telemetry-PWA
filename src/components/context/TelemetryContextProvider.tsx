@@ -1,11 +1,10 @@
 import type { TelemetryRow } from '@/lib/types/TelemetryRow';
 import type { TripRow } from '@/lib/types/TripRow';
 import { type DBSchema, type IDBPDatabase } from 'idb';
-import { createContext, useCallback, useEffect, useState } from 'react';
+import { createContext, useState } from 'react';
 import EventEmitter from 'eventemitter3';
 import useIndexedDB from '@/lib/hooks/useIndexedDB';
-import useSyncIndexedDBToCloud from '@/lib/hooks/useSyncIndexedDBToCloud';
-import useSubscribeToDatabaseUpdates from '@/lib/hooks/useSubscribeToDatabaseUpdates';
+import useSyncDBToOrigin from '@/lib/hooks/useSyncDBToOrigin';
 
 /**
  * The data type that the context provides
@@ -73,42 +72,9 @@ export default function TelemetryContextProvider({ children }: { children: React
 		},
 	});
 
-	// Syncing the cloud changes from the server to local
-	// Always sync trip changes, telemetry changes will be handled by the SpectatorContextProvider
-	useSubscribeToDatabaseUpdates('/api/trips', db, 'trips', events);
-
-	// Syncing the local changes to the cloud
-	const syncTripsToCloud = useSyncIndexedDBToCloud(db, 'trips', '/api/trips');
-	const syncTelemetryToCloud = useSyncIndexedDBToCloud(db, 'telemetry', '/api/telemetry');
-	const onUpstreamSuccess = useCallback(
-		(uploaded: boolean) => void (uploaded && events.emit('upstreamSyncError', false)),
-		[events]
-	);
-	const onUpstreamError = useCallback(
-		(error: unknown) => {
-			console.error(error);
-			events.emit('upstreamSyncError', true);
-		},
-		[events]
-	);
-	// Attempt push every 5 seconds
-	useEffect(() => {
-		function sync() {
-			void syncTripsToCloud().then(onUpstreamSuccess, onUpstreamError);
-			void syncTelemetryToCloud().then(onUpstreamSuccess, onUpstreamError);
-		}
-		const interval = setInterval(sync, 5 * 1000); // 5 seconds
-		return () => clearInterval(interval);
-	}, [syncTelemetryToCloud, syncTripsToCloud, onUpstreamSuccess, onUpstreamError]);
-	// ... or on db update
-	useEffect(() => {
-		function sync() {
-			void syncTripsToCloud().then(onUpstreamSuccess, onUpstreamError);
-			void syncTelemetryToCloud().then(onUpstreamSuccess, onUpstreamError);
-		}
-		events.on('update', sync);
-		return () => void events.off('update', sync);
-	}, [events, syncTelemetryToCloud, syncTripsToCloud, onUpstreamSuccess, onUpstreamError]);
+	// Syncing the trip changes both directions over a websocket
+	// Telemetry changes will be handled by the SpectatorContextProvider
+	useSyncDBToOrigin('/api/trips', db, 'trips', events);
 
 	// Returning the value
 	const value = {

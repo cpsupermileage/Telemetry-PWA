@@ -1,19 +1,5 @@
-import { integer, index, sqliteTable, real, text } from 'drizzle-orm/sqlite-core';
-
-export const tripsTable = sqliteTable(
-	'trips',
-	{
-		id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-		name: text('name', { mode: 'text', length: 512 }).notNull(),
-		type: integer('type', { mode: 'number' }).notNull(),
-		createdAt: integer('created_at', { mode: 'number' }).notNull(),
-		startedAt: integer('started_at', { mode: 'number' }),
-		endedAt: integer('ended_at', { mode: 'number' }),
-		// For syncing
-		editedAt: integer('edited_at', { mode: 'number' }).notNull(),
-	},
-	(table) => [index('idx_trips_editedAt').on(table.editedAt)]
-);
+import { integer, index, sqliteTable, real } from 'drizzle-orm/sqlite-core';
+import buildConflictUpdateColumns from '../util/buildConflictUpdateColumns';
 
 export const telemetryTable = sqliteTable(
 	'telemetry',
@@ -45,3 +31,5 @@ export const telemetryTable = sqliteTable(
 		index('idx_telemetry_editedAt').on(table.editedAt),
 	]
 );
+
+export const telemetrySetter = buildConflictUpdateColumns(telemetryTable);

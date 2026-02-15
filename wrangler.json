@@ -12,26 +12,22 @@
 		"directory": "./dist",
 		"not_found_handling": "single-page-application"
 	},
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "smv-telemetry",
-			"database_id": "05d77a29-5982-4c8f-a72b-d21ab96474b3",
-			"migrations_dir": "drizzle/migrations"
-		}
-	],
 	"durable_objects": {
 		"bindings": [
 			{
-				"name": "BROADCAST_SERVER",
-				"class_name": "WebSocketBroadcastServer"
+				"name": "TRIPS_DATA_SERVER",
+				"class_name": "TripsDataServer"
+			},
+			{
+				"name": "TELEMETRY_DATA_SERVER",
+				"class_name": "TelemetryDataServer"
 			}
 		]
 	},
 	"migrations": [
 		{
 			"tag": "v1",
-			"new_sqlite_classes": ["WebSocketBroadcastServer"]
+			"new_sqlite_classes": ["TripsDataServer", "TelemetryDataServer"]
 		}
 	]
 }
