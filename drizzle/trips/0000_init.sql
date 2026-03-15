@@ -2,6 +2,7 @@ CREATE TABLE `trips` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text(512) NOT NULL,
 	`type` integer NOT NULL,
+	`car` integer NOT NULL,
 	`created_at` integer NOT NULL,
 	`started_at` integer,
 	`ended_at` integer,

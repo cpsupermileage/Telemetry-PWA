@@ -1,1 +1,0 @@
-ALTER TABLE `trips` ADD `car` integer NOT NULL;
