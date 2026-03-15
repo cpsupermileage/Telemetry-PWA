@@ -7,6 +7,7 @@ export const tripsTable = sqliteTable(
 		id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
 		name: text('name', { mode: 'text', length: 512 }).notNull(),
 		type: integer('type', { mode: 'number' }).notNull(),
+		car: integer('car', { mode: 'number' }).notNull(),
 		createdAt: integer('created_at', { mode: 'number' }).notNull(),
 		startedAt: integer('started_at', { mode: 'number' }),
 		endedAt: integer('ended_at', { mode: 'number' }),

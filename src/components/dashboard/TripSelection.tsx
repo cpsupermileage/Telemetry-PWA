@@ -7,6 +7,7 @@ import { TripType } from '@/lib/types/TripType';
 import useQuery from '@/lib/hooks/useQuery';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
+import { CarType } from '@/lib/types/CarType';
 
 function TripSelection() {
 	const navigate = useNavigate();
@@ -80,10 +81,17 @@ function TripSelection() {
 								<TableCell>
 									{trip.type === TripType.TESTING && <Badge variant="secondary">Testing</Badge>}
 									{trip.type === TripType.CALIBRATION && (
-										<Badge className="bg-yellow-500 text-white dark:bg-yellow-600">Calibration</Badge>
+										<Badge className="bg-yellow-500 text-white dark:bg-yellow-600">Calibrating</Badge>
 									)}
 									{trip.type === TripType.FULL_RUN && (
 										<Badge className="bg-green-500 text-white dark:bg-green-600">Full Run</Badge>
+									)}
+									{trip.car === CarType.OFF_CAR && <Badge variant="secondary">Off Car</Badge>}
+									{trip.car === CarType.PROTOTYPE && (
+										<Badge className="bg-green-700 text-white dark:bg-green-800">Prototype</Badge>
+									)}
+									{trip.car === CarType.URBAN_CONCEPT && (
+										<Badge className="bg-purple-800 text-white dark:bg-purple-900">Urban Concept</Badge>
 									)}
 								</TableCell>
 								<TableCell>{trip.startedAt ? new Date(trip.startedAt).toLocaleString() : ''}</TableCell>

@@ -5,7 +5,7 @@ export const telemetrySchema = z
 		z.object({
 			id: z.int().min(-9_007_199_254_740_991).max(9_007_199_254_740_991),
 			tripId: z.int().min(-9_007_199_254_740_991).max(9_007_199_254_740_991),
-			time: z.int().min(-9_007_199_254_740_991).max(9_007_199_254_740_991),
+			time: z.int().min(0).max(9_007_199_254_740_991),
 			// data values
 			tempMosfet: z.number().min(-140_737_488_355_328).max(140_737_488_355_327).nullable(),
 			tempMotor: z.number().min(-140_737_488_355_328).max(140_737_488_355_327).nullable(),

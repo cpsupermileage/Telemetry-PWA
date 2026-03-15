@@ -9,12 +9,14 @@ import { TripType } from '@/lib/types/TripType';
 import useLocalStorageState from '@/lib/hooks/useLocalStorageState';
 import { use, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { CarType } from '@/lib/types/CarType';
 
 function TripView() {
 	const driver = use(DriverContext);
 
 	const [name, setName] = useState('');
 	const [tripType, setTripType] = useLocalStorageState('tripType', TripType.TESTING);
+	const [carType, setCarType] = useLocalStorageState('carType', CarType.OFF_CAR);
 
 	const placeholder = useMemo(
 		() => TripType[tripType] + ' ' + new Date().toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }),
@@ -28,6 +30,7 @@ function TripView() {
 			.setTrip({
 				name: name || placeholder,
 				type: tripType,
+				car: carType,
 				createdAt: Date.now(),
 				startedAt: null,
 				endedAt: null,
@@ -77,16 +80,35 @@ function TripView() {
 					className="flex flex-wrap gap-2"
 				>
 					<Label className={buttonVariants({ variant: 'outline', className: 'flex items-center gap-3' })}>
-						<RadioGroupItem value={TripType.TESTING + ''} id="r1" />
+						<RadioGroupItem value={TripType.TESTING + ''} />
 						<span>Testing</span>
 					</Label>
 					<Label className={buttonVariants({ variant: 'outline', className: 'flex items-center gap-3' })}>
-						<RadioGroupItem value={TripType.CALIBRATION + ''} id="r1" />
+						<RadioGroupItem value={TripType.CALIBRATION + ''} />
 						<span>Calibration</span>
 					</Label>
 					<Label className={buttonVariants({ variant: 'outline', className: 'flex items-center gap-3' })}>
-						<RadioGroupItem value={TripType.FULL_RUN + ''} id="r1" />
+						<RadioGroupItem value={TripType.FULL_RUN + ''} />
 						<span>Full Run</span>
+					</Label>
+				</RadioGroup>
+				<RadioGroup
+					disabled={!!driver?.trip}
+					value={carType + ''}
+					onValueChange={(val) => setCarType(parseInt(val))}
+					className="flex flex-wrap gap-2"
+				>
+					<Label className={buttonVariants({ variant: 'outline', className: 'flex items-center gap-3' })}>
+						<RadioGroupItem value={CarType.OFF_CAR + ''} />
+						<span>Off Car</span>
+					</Label>
+					<Label className={buttonVariants({ variant: 'outline', className: 'flex items-center gap-3' })}>
+						<RadioGroupItem value={CarType.PROTOTYPE + ''} />
+						<span>Prototype</span>
+					</Label>
+					<Label className={buttonVariants({ variant: 'outline', className: 'flex items-center gap-3' })}>
+						<RadioGroupItem value={CarType.URBAN_CONCEPT + ''} />
+						<span>Urban Concept</span>
 					</Label>
 				</RadioGroup>
 				<Separator />
