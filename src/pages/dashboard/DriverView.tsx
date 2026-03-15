@@ -203,11 +203,11 @@ function DriverView() {
 					<Widget className="p-4">
 						{driver.trip ? (
 							!driver.trip.startedAt ? (
-								<Button onClick={startTrip} className="bg-green-400 !px-8 font-bold hover:bg-green-500">
+								<Button onClick={startTrip} className="bg-green-400 px-8! font-bold hover:bg-green-500">
 									<Play /> Start Trip
 								</Button>
 							) : (
-								<Button onClick={stopTrip} className="bg-red-400 !px-8 font-bold hover:bg-red-500">
+								<Button onClick={stopTrip} className="bg-red-400 px-8! font-bold hover:bg-red-500">
 									<Octagon /> Stop Trip
 								</Button>
 							)
