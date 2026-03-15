@@ -36,5 +36,12 @@
 			"globs": ["**/*.sql"],
 			"fallthrough": true
 		}
+	],
+	"routes": [
+		{
+			"pattern": "smv.tyler.place",
+			"zone_name": "tyler.place",
+			"custom_domain": true
+		}
 	]
 }
