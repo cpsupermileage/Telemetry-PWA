@@ -29,7 +29,7 @@ export default function DriverContextProvider({ children }: { children: React.Re
 	);
 
 	// Sync the telemetry entries of this trip to the db
-	useSyncDBToOrigin(db, 'telemetry', tripId, events);
+	useSyncDBToOrigin(db, 'telemetry', trip?.id, events);
 
 	// If not already exists, adds to db, if it does exist, patch the current entry
 	const setTrip = useCallback(

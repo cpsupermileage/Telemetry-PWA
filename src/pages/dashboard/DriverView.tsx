@@ -92,8 +92,8 @@ function DriverView() {
 					.index('by-tripId-time')
 					.openCursor(IDBKeyRange.bound([tripId, 0], [tripId, spectator?.time ?? Number.MAX_SAFE_INTEGER]), 'prev');
 				const current = cursor?.value;
-				// Gets the 20th most recent entry
-				cursor = (await cursor?.advance(20)) ?? null;
+				// Gets the 8th most recent entry
+				cursor = (await cursor?.advance(8)) ?? null;
 				const prev = cursor?.value;
 				// Gets the first entry after the trip started
 				const trip = await tx.objectStore('trips').index('by-id').get(tripId);
@@ -119,9 +119,15 @@ function DriverView() {
 		[undefined, undefined, undefined, undefined]
 	);
 
+	const rpm = useMemo(() => {
+		if (!carData?.tacho || !prevCarData?.tacho) return undefined;
+		return (carData.tacho - prevCarData.tacho) / (carData.time - prevCarData.time) / 1000 / 60;
+	}, [carData, prevCarData]);
+
+	// CHANGE TO USE TACHOMETER
 	const speedMPH = useMemo(() => {
-		if (!carData?.rpm) return undefined;
-		const d = carData.rpm * 2 * Math.PI * WHEEL_RADIUS_METERS; // Meters per minute
+		if (!rpm) return undefined;
+		const d = rpm * 2 * Math.PI * WHEEL_RADIUS_METERS; // Meters per minute
 		return d / 1609 / 60; // Convert to miles per hour
 	}, [carData]);
 
@@ -202,9 +208,9 @@ function DriverView() {
 				<WidgetSpeedometer
 					value={efficiency ?? 0}
 					min={0}
-					max={10}
-					smallTickEvery={1}
-					largeTickEvery={5}
+					max={200}
+					smallTickEvery={5}
+					largeTickEvery={25}
 					className="text-yellow-500"
 					style={{ marginBottom: '-125px' }}
 				/>
