@@ -12,29 +12,33 @@ function EngineerView() {
 	const driver = use(DriverContext);
 	const spectator = use(SpectatorContext);
 
-	const tripId = useMemo(() => driver?.trip?.id ?? spectator?.tripId, [driver?.trip?.id, spectator?.tripId]);
+	const trip = useMemo(() => driver?.trip ?? spectator?.trip, [driver?.trip, spectator?.trip]);
 
-	const [carData, firstCarData] = useQuery(
+	const [carData, prevCarData, firstCarData] = useQuery<
+		[TelemetryRow | undefined, TelemetryRow | undefined, TelemetryRow | undefined]
+	>(
 		useCallback(
 			async (db) => {
-				if (!tripId) return [undefined, undefined];
+				if (!trip) return [undefined, undefined, undefined];
 				const tx = db.transaction(['telemetry', 'trips'], 'readonly');
 
 				// Gets the most recent entry
 				let cursor = await tx
 					.objectStore('telemetry')
 					.index('by-tripId-time')
-					.openCursor(IDBKeyRange.bound([tripId, 0], [tripId, spectator?.time ?? Number.MAX_SAFE_INTEGER]), 'prev');
+					.openCursor(IDBKeyRange.bound([trip.id, 0], [trip.id, spectator?.time ?? Number.MAX_SAFE_INTEGER]), 'prev');
 				const current = cursor?.value;
+				// Gets the 8th most recent entry
+				cursor = (await cursor?.advance(8)) ?? null;
+				const prev = cursor?.value;
 				// Gets the first entry after the trip started
-				const trip = await tx.objectStore('trips').index('by-id').get(tripId);
 				let first: TelemetryRow | undefined;
-				if (trip?.startedAt && (spectator?.time === undefined || trip.startedAt <= spectator?.time)) {
+				if (trip?.startedAt && (spectator?.time === undefined || trip.startedAt <= spectator.time)) {
 					cursor = await tx
 						.objectStore('telemetry')
 						.index('by-tripId-time')
 						.openCursor(
-							IDBKeyRange.bound([tripId, trip.startedAt], [tripId, spectator?.time ?? Number.MAX_SAFE_INTEGER]),
+							IDBKeyRange.bound([trip.id, trip.startedAt], [trip.id, spectator?.time ?? Number.MAX_SAFE_INTEGER]),
 							'next'
 						);
 					first = cursor?.value;
@@ -43,18 +47,23 @@ function EngineerView() {
 				}
 
 				await tx.done;
-				return [current, first];
+				return [current, prev, first];
 			},
-			[tripId, spectator?.time]
+			[trip, spectator]
 		),
-		[undefined, undefined]
+		[undefined, undefined, undefined]
 	);
 
+	const rpm = useMemo(() => {
+		if (!carData?.tacho || !prevCarData?.tacho) return undefined;
+		return (carData.tacho - prevCarData.tacho) / (carData.time - prevCarData.time) / 1000 / 60;
+	}, [carData, prevCarData]);
+
 	const speedMPH = useMemo(() => {
-		if (!carData?.rpm) return undefined;
-		const d = carData.rpm * 2 * Math.PI * WHEEL_RADIUS_METERS; // Meters per minute
+		if (!rpm) return undefined;
+		const d = rpm * 2 * Math.PI * WHEEL_RADIUS_METERS; // Meters per minute
 		return d / 1609 / 60; // Convert to miles per hour
-	}, [carData]);
+	}, [rpm]);
 
 	const milesTraveled = useMemo(() => {
 		if (!carData?.tacho || !firstCarData?.tacho) return undefined;
@@ -83,7 +92,7 @@ function EngineerView() {
 			</Widget>
 			<Widget className="justify-start">
 				<Cog size={64} className="my-6" />
-				<WidgetStatistic value={carData?.rpm} unit="RPM" size="xl" className="[small]:mb-2" />
+				<WidgetStatistic value={rpm} unit="RPM" size="xl" className="[small]:mb-2" />
 				<WidgetStatistic value={carData?.motorCurrent} unit="Motor Amps" size="lg" className="[small]:mb-2" />
 				<WidgetStatistic value={carData?.tempMotor} suffix="℃" unit="Motor Temp" size="lg" />
 			</Widget>

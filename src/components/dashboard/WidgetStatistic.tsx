@@ -33,7 +33,11 @@ function WidgetStatistic({
 	return (
 		<>
 			<h3 className={widgetStatisticVariants({ size, className })} {...props}>
-				{value !== undefined && value !== null ? (typeof value === 'number' ? value.toFixed(delta) : value) : '--'}
+				{value !== undefined && value !== null
+					? typeof value === 'number'
+						? value.toFixed(delta).replace('Infinity', '∞').replace('Nan', '0')
+						: value
+					: '--'}
 				{suffix}
 			</h3>
 			<small className={widgetStatisticVariants({ size, className })} {...props}>
