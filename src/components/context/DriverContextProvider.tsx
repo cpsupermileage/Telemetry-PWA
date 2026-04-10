@@ -66,7 +66,6 @@ export default function DriverContextProvider({ children }: { children: React.Re
 		inputCurrent: null,
 		dutyCycle: null,
 		tacho: null,
-		rpm: null,
 		volts: null,
 		wattHours: null,
 		error: null,

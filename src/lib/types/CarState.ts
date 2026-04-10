@@ -25,14 +25,9 @@ export interface CarState {
 	 */
 	dutyCycle: number | null;
 	/**
-	 * The absolute total motor steps taken by the motor controller since last reset.
-	 * @see https://github.com/vedderb/bldc/blob/master/motor/mcpwm.c#L886
+	 * The absolute total motor revs from the hall sensor
 	 */
 	tacho: number | null;
-	/**
-	 * The revolutions per minute of the car's **wheels**.
-	 */
-	rpm: number | null;
 	/**
 	 * The current voltage into the motor
 	 */

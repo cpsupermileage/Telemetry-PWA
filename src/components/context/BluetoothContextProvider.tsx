@@ -14,7 +14,6 @@ const CHARACTERISTIC_UUIDS: Record<CharacteristicKeys, BluetoothCharacteristicUU
 	inputCurrent: 0x2ae0, // Average Current
 	dutyCycle: 0x2c10, // Work Cycle Data
 	tacho: 0x2c09, // Rotational Speed
-	rpm: 0x2a67, // Location and Speed
 	volts: 0x2b18, // Voltage
 	wattHours: 0x2af2, // Energy
 	error: 0x2bbb, // Status flags
@@ -27,7 +26,6 @@ const CHARACTERISTIC_DECODE_FUNCTIONS: Record<CharacteristicKeys, (data: DataVie
 	inputCurrent: (data) => data.getFloat32(0, true),
 	dutyCycle: (data) => data.getFloat32(0, true),
 	tacho: (data) => data.getUint32(0, true),
-	rpm: (data) => data.getFloat32(0, true),
 	volts: (data) => data.getFloat32(0, true),
 	wattHours: (data) => data.getFloat32(0, true),
 	error: (data) => data.getUint8(0),
