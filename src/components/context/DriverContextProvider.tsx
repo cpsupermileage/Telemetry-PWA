@@ -6,6 +6,7 @@ import genRandomId from '@/lib/utils/genRandomId';
 import type { CarState } from '@/lib/types/CarState';
 import { TelemetryContext } from './TelemetryContextProvider';
 import useSyncDBToOrigin from '@/lib/hooks/useSyncDBToOrigin';
+import useQuery from '@/lib/hooks/useQuery';
 
 /**
  * The data type that the context provides
@@ -22,15 +23,19 @@ export interface DriverContextType {
 export default function DriverContextProvider({ children }: { children: React.ReactNode }) {
 	const ble = use(BluetoothContext);
 	const { db, events } = use(TelemetryContext);
-	const [trip, _setTrip] = useState<TripRow | undefined>(undefined);
+	const [tripId, setTripId] = useState<number | undefined>(undefined);
+	const trip = useQuery(
+		useCallback(async (db) => (tripId ? db.get('trips', tripId) : undefined), [db, tripId]),
+		undefined
+	);
 
 	// Sync the telemetry entries of this trip to the db
-	useSyncDBToOrigin(db, 'telemetry', trip?.id, events);
+	useSyncDBToOrigin(db, 'telemetry', tripId, events);
 
 	// If not already exists, adds to db, if it does exist, patch the current entry
 	const setTrip = useCallback(
 		async (trip: Omit<TripRow, 'id'> | TripRow | undefined) => {
-			if (trip === undefined) return _setTrip(undefined);
+			if (trip === undefined) return setTripId(undefined);
 
 			if (!db) return console.error('Attempted to push trip to db, but db is undefined');
 
@@ -41,11 +46,7 @@ export default function DriverContextProvider({ children }: { children: React.Re
 				id,
 				editedAt: 0,
 			});
-			_setTrip({
-				...trip,
-				id,
-				editedAt: 0,
-			});
+			setTripId(id);
 			events.emit('update');
 		},
 		[db, events]

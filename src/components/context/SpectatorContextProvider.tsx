@@ -3,12 +3,15 @@ import { TelemetryContext } from './TelemetryContextProvider';
 import { useParams } from 'react-router';
 import useQuery from '@/lib/hooks/useQuery';
 import useSyncDBToOrigin from '@/lib/hooks/useSyncDBToOrigin';
+import type { TripRow } from '@/lib/types/TripRow';
 
 /**
  * The data type that the context provides
  */
 export interface SpectatorContextType {
-	tripId: number | undefined;
+	tripId: number;
+	trip: TripRow | undefined;
+	updateTrip: (trip: Omit<TripRow, 'id'>) => Promise<void>;
 	/**
 	 * During playback, this is the current time of the trip we are viewing up to, or undefined if its the live feed
 	 */
@@ -33,9 +36,27 @@ export default function SpectatorTelemetryContextProvider({ children }: { childr
 
 	const params = useParams();
 	const tripId = useMemo(() => parseInt(params.tripId!), [params]);
+	const trip = useQuery(
+		useCallback(async (db) => db.get('trips', tripId), [db, tripId]),
+		undefined
+	);
 
 	// Sync the telemetry entries of this trip to the db
 	useSyncDBToOrigin(db, 'telemetry', tripId, events);
+
+	const updateTrip = useCallback(
+		async (trip: Omit<TripRow, 'id'>) => {
+			if (!db) return console.error('Attempted to push trip to db, but db is undefined');
+
+			await db.put('trips', {
+				...trip,
+				id: tripId,
+				editedAt: 0,
+			});
+			events.emit('update');
+		},
+		[db, events]
+	);
 
 	const [time, setTime] = useState<number | undefined>(undefined); // Will be undefined if live
 	const [paused, _setPaused] = useState<boolean>(false);
@@ -130,6 +151,8 @@ export default function SpectatorTelemetryContextProvider({ children }: { childr
 	// Returning the value
 	const value = {
 		tripId,
+		trip,
+		updateTrip,
 		time,
 		setTime,
 		paused,

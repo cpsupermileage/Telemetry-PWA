@@ -24,32 +24,56 @@ function DriverView() {
 	const spectator = use(SpectatorContext);
 
 	function startTrip() {
-		if (!driver) return toast.error('Function not available');
-		if (driver.trip === undefined) return;
-		driver
-			.setTrip({
-				...driver.trip,
-				startedAt: Date.now(),
-			})
-			.catch((err) => {
-				console.error(err);
-				toast.error('Failed to start trip: ' + (err instanceof Error ? err.message : 'Unknown Error'));
-			});
+		if (driver !== undefined) {
+			if (driver.trip === undefined) return;
+			driver
+				.setTrip({
+					...driver.trip,
+					startedAt: Date.now(),
+				})
+				.catch((err) => {
+					console.error(err);
+					toast.error('Failed to start trip: ' + (err instanceof Error ? err.message : 'Unknown Error'));
+				});
+		} else if (spectator !== undefined) {
+			if (spectator.trip === undefined) return;
+			spectator
+				.updateTrip({
+					...spectator.trip,
+					startedAt: Date.now(),
+				})
+				.catch((err) => {
+					console.error(err);
+					toast.error('Failed to start trip: ' + (err instanceof Error ? err.message : 'Unknown Error'));
+				});
+		} else return toast.error('Function not available');
 	}
 
 	function stopTrip() {
-		if (!driver) return toast.error('Function not available');
-		if (driver.trip === undefined) return;
-		driver
-			.setTrip({
-				...driver.trip,
-				endedAt: Date.now(),
-			})
-			.then(() => driver.setTrip(undefined))
-			.catch((err) => {
-				console.error(err);
-				toast.error('Failed to stop trip: ' + (err instanceof Error ? err.message : 'Unknown Error'));
-			});
+		if (driver !== undefined) {
+			if (driver.trip === undefined) return;
+			driver
+				.setTrip({
+					...driver.trip,
+					endedAt: Date.now(),
+				})
+				.then(() => driver.setTrip(undefined))
+				.catch((err) => {
+					console.error(err);
+					toast.error('Failed to stop trip: ' + (err instanceof Error ? err.message : 'Unknown Error'));
+				});
+		} else if (spectator !== undefined) {
+			if (spectator.trip === undefined) return;
+			spectator
+				.updateTrip({
+					...spectator.trip,
+					endedAt: Date.now(),
+				})
+				.catch((err) => {
+					console.error(err);
+					toast.error('Failed to stop trip: ' + (err instanceof Error ? err.message : 'Unknown Error'));
+				});
+		} else return toast.error('Function not available');
 	}
 
 	const tripId = useMemo(() => driver?.trip?.id ?? spectator?.tripId, [driver?.trip?.id, spectator?.tripId]);
@@ -199,10 +223,10 @@ function DriverView() {
 						<ControlledGoogleMaps defaultZoom={18} defaultTilt={45} {...cameraProps} />
 					)}
 				</Widget>
-				{driver && (
+				{driver || (spectator && !spectator.trip?.endedAt) ? (
 					<Widget className="p-4">
-						{driver.trip ? (
-							!driver.trip.startedAt ? (
+						{(driver ?? spectator)?.trip ? (
+							!(driver ?? spectator)!.trip!.startedAt ? (
 								<Button onClick={startTrip} className="bg-green-400 px-8! font-bold hover:bg-green-500">
 									<Play /> Start Trip
 								</Button>
@@ -218,6 +242,8 @@ function DriverView() {
 							</div>
 						)}
 					</Widget>
+				) : (
+					<></>
 				)}
 				{spectator && <SpectatorControls />}
 				{carData?.error && (
