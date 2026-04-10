@@ -28,7 +28,7 @@ export default function DriverContextProvider({ children }: { children: React.Re
 			async (db) => {
 				if (!tripId) return;
 				const trip = await db.get('trips', tripId);
-				if (trip?.editedAt) setTripId(undefined);
+				if (trip?.endedAt) setTripId(undefined);
 				return trip;
 			},
 			[tripId]
