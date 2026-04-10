@@ -24,7 +24,15 @@ export default function DriverContextProvider({ children }: { children: React.Re
 	const { db, events } = use(TelemetryContext);
 	const [tripId, setTripId] = useState<number | undefined>(undefined);
 	const trip = useQuery(
-		useCallback(async (db) => (tripId ? db.get('trips', tripId) : undefined), [tripId]),
+		useCallback(
+			async (db) => {
+				if (!tripId) return;
+				const trip = await db.get('trips', tripId);
+				if (trip?.editedAt) setTripId(undefined);
+				return trip;
+			},
+			[tripId]
+		),
 		undefined
 	);
 

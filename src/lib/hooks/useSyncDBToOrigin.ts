@@ -68,6 +68,7 @@ function _syncDBToOrigin(
 			for (const row of res) await store.put(row);
 			await tx.done;
 		}
+		eventEmitter?.emit('update');
 	}
 
 	async function uploadLocalUpdateViaWebsocket() {
