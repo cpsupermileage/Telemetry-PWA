@@ -96,7 +96,7 @@ function DriverView() {
 				const prev = cursor?.value;
 				// Gets the first entry after the trip started
 				let first: TelemetryRow | undefined;
-				if (trip?.startedAt && (spectator?.time === undefined || trip.startedAt <= spectator.time)) {
+				if (trip?.startedAt && (spectator?.time == undefined || trip.startedAt <= spectator.time)) {
 					cursor = await tx
 						.objectStore('telemetry')
 						.index('by-tripId-time')
@@ -117,9 +117,12 @@ function DriverView() {
 		[undefined, undefined, undefined]
 	);
 
+	console.log(carData, prevCarData, firstCarData);
+
 	const rpm = useMemo(() => {
-		if (!carData?.tacho || !prevCarData?.tacho) return undefined;
-		return (carData.tacho - prevCarData.tacho) / (carData.time - prevCarData.time) / 1000 / 60;
+		if (!carData || !prevCarData) return;
+		if (carData.tacho == null || prevCarData.tacho == null) return;
+		return (carData.tacho - prevCarData.tacho) / ((carData.time - prevCarData.time) / 1000 / 60);
 	}, [carData, prevCarData]);
 
 	const speedMPH = useMemo(() => {
@@ -140,7 +143,8 @@ function DriverView() {
 	}, [carData, trip]);
 
 	const milesRemaining = useMemo(() => {
-		if (!carData?.tacho || !firstCarData?.tacho) return undefined;
+		if (!carData || !firstCarData) return undefined;
+		if (carData.tacho == null || firstCarData.tacho == null) return undefined;
 
 		const dRev = (carData.tacho - firstCarData.tacho) / MOTOR_STEPS; // Amount of wheel revolutions traveled
 		const dMiles = (dRev * 2 * Math.PI * WHEEL_RADIUS_METERS) / 1609; // Distance traveled miles
@@ -149,25 +153,39 @@ function DriverView() {
 	}, [carData, firstCarData]);
 
 	const efficiency = useMemo(() => {
-		if (!carData?.wattHours || !prevCarData?.wattHours || !carData.tacho || !prevCarData.tacho) return;
+		if (!carData || !prevCarData) return;
+		if (
+			carData.wattHours == null ||
+			prevCarData.wattHours == null ||
+			carData.tacho == null ||
+			prevCarData.tacho == null
+		)
+			return;
 
 		const dRev = (carData.tacho - prevCarData.tacho) / MOTOR_STEPS; // Amount of wheel revolutions traveled
 		const dMiles = (dRev * 2 * Math.PI * WHEEL_RADIUS_METERS) / 1609; // Distance traveled miles
 
 		const dWH = (carData.wattHours - prevCarData.wattHours) / 1000; // KiloWatt hours used since last entry
 
-		return dMiles / dWH;
+		return dWH > 0 ? dMiles / dWH : 0;
 	}, [carData, prevCarData]);
 
 	const avgEfficiency = useMemo(() => {
-		if (!carData?.wattHours || !firstCarData?.wattHours || !carData.tacho || !firstCarData.tacho) return;
+		if (!carData || !firstCarData) return;
+		if (
+			carData.wattHours == null ||
+			firstCarData.wattHours == null ||
+			carData.tacho == null ||
+			firstCarData.tacho == null
+		)
+			return;
 
 		const dRev = (carData.tacho - firstCarData.tacho) / MOTOR_STEPS; // Amount of wheel revolutions traveled
 		const dMiles = (dRev * 2 * Math.PI * WHEEL_RADIUS_METERS) / 1609; // Distance traveled miles
 
 		const dWH = (carData.wattHours - firstCarData.wattHours) / 1000; // KiloWatt hours used since last entry
 
-		return dMiles / dWH;
+		return dWH > 0 ? dMiles / dWH : 0;
 	}, [carData, firstCarData]);
 
 	const cameraProps = useMemo<Partial<MapCameraProps> | undefined>(() => {
@@ -203,7 +221,7 @@ function DriverView() {
 			</Widget>
 			<Widget style={{ gridArea: 'c' }}>
 				<WidgetSpeedometer
-					value={efficiency ?? 0}
+					value={avgEfficiency ?? 0}
 					min={0}
 					max={200}
 					smallTickEvery={5}
@@ -211,10 +229,10 @@ function DriverView() {
 					className="text-yellow-500"
 					style={{ marginBottom: '-125px' }}
 				/>
-				<WidgetStatistic value={efficiency} unit="Mi/KWh" delta={2} size="2xl" />
+				<WidgetStatistic value={avgEfficiency} unit="Avg Mi/KWh" delta={2} size="2xl" />
 			</Widget>
 			<Widget style={{ gridArea: 'd' }}>
-				<WidgetStatistic value={avgEfficiency} unit="Average Mi/KWh" delta={2} size="xl" className="[small]:mb-2" />
+				<WidgetStatistic value={efficiency} unit="Current Mi/KWh" delta={2} size="xl" className="[small]:mb-2" />
 				<WidgetStatistic value={carData?.volts} unit="Volts" delta={1} size="lg" />
 			</Widget>
 			<div style={{ gridArea: 'e' }} className="relative flex flex-col gap-2">

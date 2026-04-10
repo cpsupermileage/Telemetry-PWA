@@ -55,8 +55,9 @@ function EngineerView() {
 	);
 
 	const rpm = useMemo(() => {
-		if (!carData?.tacho || !prevCarData?.tacho) return undefined;
-		return (carData.tacho - prevCarData.tacho) / (carData.time - prevCarData.time) / 1000 / 60;
+		if (!carData || !prevCarData) return;
+		if (carData.tacho == null || prevCarData.tacho == null) return;
+		return (carData.tacho - prevCarData.tacho) / ((carData.time - prevCarData.time) / 1000 / 60);
 	}, [carData, prevCarData]);
 
 	const speedMPH = useMemo(() => {
@@ -66,7 +67,8 @@ function EngineerView() {
 	}, [rpm]);
 
 	const milesTraveled = useMemo(() => {
-		if (!carData?.tacho || !firstCarData?.tacho) return undefined;
+		if (!carData || !firstCarData) return undefined;
+		if (carData.tacho == null || firstCarData.tacho == null) return undefined;
 
 		const dRev = (carData.tacho - firstCarData.tacho) / MOTOR_STEPS; // Amount of wheel revolutions traveled
 		return (dRev * 2 * Math.PI * WHEEL_RADIUS_METERS) / 1609; // Distance traveled miles
@@ -99,7 +101,7 @@ function EngineerView() {
 			<Widget className="justify-start">
 				<Disc2 size={64} className="my-6" />
 				<WidgetStatistic value={speedMPH} unit="MPH" delta={1} size="lg" className="[small]:mb-2" />
-				<WidgetStatistic value={milesTraveled} unit="Miles" delta={2} size="lg" />
+				<WidgetStatistic value={milesTraveled} unit="Miles" delta={3} size="lg" />
 			</Widget>
 		</section>
 	);
