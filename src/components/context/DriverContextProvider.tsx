@@ -1,7 +1,6 @@
 import type { TripRow } from '@/lib/types/TripRow';
 import { createContext, use, useCallback, useEffect, useRef, useState } from 'react';
 import { BluetoothContext, type CharacteristicKeys } from './BluetoothContextProvider';
-import debouncedFunction from '@/lib/utils/debouncedFunction';
 import genRandomId from '@/lib/utils/genRandomId';
 import type { CarState } from '@/lib/types/CarState';
 import { TelemetryContext } from './TelemetryContextProvider';
@@ -25,7 +24,7 @@ export default function DriverContextProvider({ children }: { children: React.Re
 	const { db, events } = use(TelemetryContext);
 	const [tripId, setTripId] = useState<number | undefined>(undefined);
 	const trip = useQuery(
-		useCallback(async (db) => (tripId ? db.get('trips', tripId) : undefined), [db, tripId]),
+		useCallback(async (db) => (tripId ? db.get('trips', tripId) : undefined), [tripId]),
 		undefined
 	);
 
@@ -52,7 +51,18 @@ export default function DriverContextProvider({ children }: { children: React.Re
 		[db, events]
 	);
 
-	const cache = useRef<Partial<CarState>>({});
+	const cache = useRef<CarState>({
+		tempMosfet: null,
+		tempMotor: null,
+		motorCurrent: null,
+		inputCurrent: null,
+		dutyCycle: null,
+		tacho: null,
+		rpm: null,
+		volts: null,
+		wattHours: null,
+		error: null,
+	});
 	const geoCache = useRef<GeolocationPosition | undefined>(undefined);
 
 	// Function for taking the cached data and putting it in the db
@@ -65,29 +75,13 @@ export default function DriverContextProvider({ children }: { children: React.Re
 			id: genRandomId(),
 			tripId: trip.id,
 			time: Date.now(),
-			...{
-				// Default all values as null
-				tempMosfet: null,
-				tempMotor: null,
-				motorCurrent: null,
-				inputCurrent: null,
-				dutyCycle: null,
-				tacho: null,
-				rpm: null,
-				volts: null,
-				wattHours: null,
-				error: null,
-				// Inject cache
-				...cache.current,
-			},
+			...cache.current,
 			lat: geoCache.current?.coords.latitude ?? null,
 			long: geoCache.current?.coords.longitude ?? null,
 			heading: geoCache.current?.coords.heading ?? null,
 			editedAt: 0,
 		});
 
-		// Clear caches immediately after we push to db
-		cache.current = {};
 		//geoCache.current = undefined; // Don't clear geocache bc its update rate is slow
 		// Notify of db update
 		events.emit('update');
@@ -97,19 +91,21 @@ export default function DriverContextProvider({ children }: { children: React.Re
 	useEffect(() => {
 		if (!ble) return;
 
-		// Makes it so pushToDB() will only be called max every 250ms
-		const tryPost = debouncedFunction(postTelemetry, 250);
-
 		function onCharUpdate(name: CharacteristicKeys, value: number) {
 			cache.current[name] = value;
-			tryPost();
 		}
 
 		ble.events.on('characteristicUpdate', onCharUpdate);
 		return () => {
 			ble.events.off('characteristicUpdate', onCharUpdate);
 		};
-	}, [ble, postTelemetry]);
+	}, [ble]);
+
+	useEffect(() => {
+		if (!trip) return;
+		const interval = setInterval(postTelemetry, 250);
+		return () => clearInterval(interval);
+	}, [postTelemetry, trip]);
 
 	// Exists so the google maps embed can update the values that are logged, puts them in a cache
 	const setGeolocation = useCallback((pos: GeolocationPosition) => {

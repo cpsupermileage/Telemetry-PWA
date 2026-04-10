@@ -223,7 +223,7 @@ function DriverView() {
 						<ControlledGoogleMaps defaultZoom={18} defaultTilt={45} {...cameraProps} />
 					)}
 				</Widget>
-				{driver || (spectator && !spectator.trip?.endedAt) ? (
+				{(driver ?? (spectator && !spectator.trip?.endedAt)) && (
 					<Widget className="p-4">
 						{(driver ?? spectator)?.trip ? (
 							!(driver ?? spectator)!.trip!.startedAt ? (
@@ -242,8 +242,6 @@ function DriverView() {
 							</div>
 						)}
 					</Widget>
-				) : (
-					<></>
 				)}
 				{spectator && <SpectatorControls />}
 				{carData?.error && (
