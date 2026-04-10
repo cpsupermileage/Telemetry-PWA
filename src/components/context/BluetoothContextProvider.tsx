@@ -176,7 +176,10 @@ export default function BluetoothContextProvider({ children }: { children: React
 		) as Record<CharacteristicKeys, BluetoothRemoteGATTCharacteristic>;
 
 		// Subscribe to all characteristic updates
-		await Promise.all(Object.values(characteristics.current).map((c) => c.startNotifications()));
+		// await Promise.all(Object.values(characteristics.current).map((c) => c.startNotifications()));
+		for (const c of Object.values(characteristics.current)) {
+			await c.startNotifications();
+		}
 		// Attach event listeners that proxy to the 'characteristicUpdate' event
 		Object.entries(characteristics.current).forEach(([name, c]) =>
 			c.addEventListener('characteristicvaluechanged', () => {
