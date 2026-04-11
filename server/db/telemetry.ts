@@ -14,7 +14,6 @@ export const telemetryTable = sqliteTable(
 		inputCurrent: real('input_current'),
 		dutyCycle: real('duty_cycle'),
 		tacho: integer('tacho', { mode: 'number' }),
-		rpm: real('rpm'),
 		volts: real('volts'),
 		wattHours: real('watt_hours'),
 		error: integer('error', { mode: 'number' }),

@@ -1,0 +1,156 @@
+{
+	"version": "6",
+	"dialect": "sqlite",
+	"id": "c442e382-bdaf-4f66-9efd-e2ee86d8637f",
+	"prevId": "b8a3da71-5ec3-4810-b0fc-06c679a0ae3f",
+	"tables": {
+		"telemetry": {
+			"name": "telemetry",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"trip_id": {
+					"name": "trip_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"time": {
+					"name": "time",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"temp_mosfet": {
+					"name": "temp_mosfet",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"temp_motor": {
+					"name": "temp_motor",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"motor_current": {
+					"name": "motor_current",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"input_current": {
+					"name": "input_current",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"duty_cycle": {
+					"name": "duty_cycle",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"tacho": {
+					"name": "tacho",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"volts": {
+					"name": "volts",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"watt_hours": {
+					"name": "watt_hours",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"error": {
+					"name": "error",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"lat": {
+					"name": "lat",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"long": {
+					"name": "long",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"heading": {
+					"name": "heading",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"edited_at": {
+					"name": "edited_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"idx_tripId": {
+					"name": "idx_tripId",
+					"columns": ["trip_id"],
+					"isUnique": false
+				},
+				"idx_time": {
+					"name": "idx_time",
+					"columns": ["time"],
+					"isUnique": false
+				},
+				"idx_telemetry_editedAt": {
+					"name": "idx_telemetry_editedAt",
+					"columns": ["edited_at"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		}
+	},
+	"views": {},
+	"enums": {},
+	"_meta": {
+		"schemas": {},
+		"tables": {},
+		"columns": {}
+	},
+	"internal": {
+		"indexes": {}
+	}
+}
