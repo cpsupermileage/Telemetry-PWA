@@ -76,10 +76,10 @@ function _syncDBToOrigin(
 
 		let toSync: (TripRow | TelemetryRow)[] = [];
 		if (storeName === 'trips') {
-			toSync = await db.getAllFromIndex(storeName, 'by-editedAt', 0, 50);
+			toSync = await db.getAllFromIndex(storeName, 'by-editedAt', 0, 5);
 		} else {
 			if (tripId === undefined) return;
-			toSync = await db.getAllFromIndex(storeName, 'by-tripId-editedAt', [tripId, 0], 50);
+			toSync = await db.getAllFromIndex(storeName, 'by-tripId-editedAt', [tripId, 0], 5);
 		}
 		if (toSync.length == 0) return;
 
