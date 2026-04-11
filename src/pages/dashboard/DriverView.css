@@ -6,7 +6,7 @@
 	@container (width < 48rem) {
 		grid-template:
 			'a b' 1fr
-			'e e' 2fr
+			'e e' 3fr
 			'c d' 1fr / 1fr 1fr;
 	}
 }
