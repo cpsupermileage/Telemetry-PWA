@@ -23,4 +23,4 @@ export const telemetrySchema = z
 		})
 	)
 	.min(1)
-	.max(50);
+	.max(10);
