@@ -57,13 +57,13 @@ function EngineerView() {
 	const rpm = useMemo(() => {
 		if (!carData || !prevCarData) return;
 		if (carData.tacho == null || prevCarData.tacho == null) return;
-		return (carData.tacho - prevCarData.tacho) / ((carData.time - prevCarData.time) / 1000 / 60);
+		return (carData.tacho - prevCarData.tacho) / ((carData.time - prevCarData.time) / (1000 * 60));
 	}, [carData, prevCarData]);
 
 	const speedMPH = useMemo(() => {
 		if (!rpm) return undefined;
 		const d = rpm * 2 * Math.PI * WHEEL_RADIUS_METERS; // Meters per minute
-		return d / 1609 / 60; // Convert to miles per hour
+		return d / (1609 / 60); // Convert to miles per hour
 	}, [rpm]);
 
 	const milesTraveled = useMemo(() => {
