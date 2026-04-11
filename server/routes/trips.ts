@@ -24,11 +24,11 @@ router.get('/ws', (c) => {
 	return stub.fetch(c.req.raw);
 });
 
-router.post('/', (c) => {
-	const data = tripSchema.parse(c.req.json());
+router.post('/', async (c) => {
+	const data = tripSchema.max(50).parse(c.req.json());
 
 	const stub = c.env.TRIPS_DATA_SERVER.getByName('global') as DurableObjectStub<TripsDataServer>;
-	const rows = stub.upload(data);
+	const rows = await stub.upload(data);
 	return c.json(rows);
 });
 

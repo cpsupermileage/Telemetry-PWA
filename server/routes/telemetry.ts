@@ -30,12 +30,12 @@ router.get('/:tripId/ws', (c) => {
 	return stub.fetch(c.req.raw);
 });
 
-router.post('/:tripId', (c) => {
+router.post('/:tripId', async (c) => {
 	const tripId = tripIdSchema.parse(c.req.param('tripId'));
-	const data = telemetrySchema.parse(c.req.json());
+	const data = telemetrySchema.max(50).parse(c.req.json());
 
 	const stub = c.env.TELEMETRY_DATA_SERVER.getByName(tripId + '') as DurableObjectStub<TelemetryDataServer>;
-	const rows = stub.upload(data);
+	const rows = await stub.upload(data);
 	return c.json(rows);
 });
 

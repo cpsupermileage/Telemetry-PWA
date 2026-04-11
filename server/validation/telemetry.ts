@@ -22,5 +22,4 @@ export const telemetrySchema = z
 			heading: z.number().min(-140_737_488_355_328).max(140_737_488_355_327).nullable(),
 		})
 	)
-	.min(1)
-	.max(10);
+	.min(1);

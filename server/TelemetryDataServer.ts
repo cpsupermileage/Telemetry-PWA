@@ -37,9 +37,9 @@ export class TelemetryDataServer extends DurableObject {
 	}
 
 	webSocketMessage(_ws: WebSocket, message: string | ArrayBuffer): void | Promise<void> {
-		const res = telemetrySchema.safeParse(
-			JSON.parse(typeof message === 'string' ? message : new TextDecoder().decode(message))
-		);
+		const res = telemetrySchema
+			.max(5)
+			.safeParse(JSON.parse(typeof message === 'string' ? message : new TextDecoder().decode(message)));
 		if (!res.success)
 			return console.error(
 				'Invalid request: ' + res.error.issues[0].path.join('.') + ': ' + res.error.issues[0].message

@@ -76,14 +76,22 @@ function _syncDBToOrigin(
 
 		let toSync: (TripRow | TelemetryRow)[] = [];
 		if (storeName === 'trips') {
-			toSync = await db.getAllFromIndex(storeName, 'by-editedAt', 0, 10);
+			toSync = await db.getAllFromIndex(storeName, 'by-editedAt', 0, 50);
 		} else {
 			if (tripId === undefined) return;
-			toSync = await db.getAllFromIndex(storeName, 'by-tripId-editedAt', [tripId, 0], 10);
+			toSync = await db.getAllFromIndex(storeName, 'by-tripId-editedAt', [tripId, 0], 50);
 		}
 		if (toSync.length == 0) return;
 
-		ws.send(JSON.stringify(toSync));
+		if (toSync.length <= 5) {
+			ws.send(JSON.stringify(toSync));
+		} else {
+			const res = (await apiRequest('POST', baseUrl, toSync)) as (TripRow | TelemetryRow)[];
+			const tx = db.transaction(storeName, 'readwrite');
+			const store = tx.objectStore(storeName);
+			for (const row of res) await store.put(row);
+			await tx.done;
+		}
 		// Updates will be received via the websocket events defined below
 	}
 

@@ -12,5 +12,4 @@ export const tripSchema = z
 			endedAt: z.int().min(0).max(9_007_199_254_740_991).nullable(),
 		})
 	)
-	.min(1)
-	.max(10);
+	.min(1);

@@ -37,9 +37,9 @@ export class TripsDataServer extends DurableObject {
 	}
 
 	webSocketMessage(_ws: WebSocket, message: string | ArrayBuffer): void | Promise<void> {
-		const res = tripSchema.safeParse(
-			JSON.parse(typeof message === 'string' ? message : new TextDecoder().decode(message))
-		);
+		const res = tripSchema
+			.max(5)
+			.safeParse(JSON.parse(typeof message === 'string' ? message : new TextDecoder().decode(message)));
 		if (!res.success)
 			return console.error(
 				'Invalid request: ' + res.error.issues[0].path.join('.') + ': ' + res.error.issues[0].message
