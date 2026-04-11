@@ -15,14 +15,14 @@ function Dashboard() {
 	return (
 		<main className="relative mx-auto h-screen max-w-4xl snap-y snap-mandatory overflow-y-scroll">
 			{driver !== undefined && (
-				<div className="@container h-screen max-h-[600px] w-full snap-center md:max-h-96">
+				<div className="@container h-screen max-h-[800px] w-full snap-center md:max-h-96">
 					<TripView />
 				</div>
 			)}
-			<div className="@container h-screen max-h-[600px] w-full snap-center md:max-h-96">
+			<div className="@container h-screen max-h-[800px] w-full snap-center md:max-h-96">
 				<DriverView />
 			</div>
-			<div className="@container h-screen max-h-[600px] w-full snap-center md:max-h-96">
+			<div className="@container h-screen max-h-[800px] w-full snap-center md:max-h-96">
 				<EngineerView />
 			</div>
 			<div className="fixed top-2 left-2">
